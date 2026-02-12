@@ -9,8 +9,8 @@
 #include <set>
 #include <string>
 #include <vector>
-#include "Polinom.h"
 
+#include "Polinom.h"
 #include "stack.h"
 
 using namespace std;
@@ -33,13 +33,13 @@ class Lexem {
     int GetType();
 };
 
-template<typename T>
+template <typename T>
 class Arithmetic {
     vector<Lexem> lexems;
     vector<Lexem> postfix;
     string infix;
     map<string, int> priority = {{"+", 1}, {"-", 1}, {"*", 2}, {"/", 2}, {"(", 0}, {")", 0}};
-   //map<string, double> operands;
+    // map<string, double> operands;
     map<string, T> operands;
 
    public:
@@ -50,18 +50,17 @@ class Arithmetic {
     void TranslationToPost();
     void InputOperands();
 
-    T ConvertToT(const string& str);
+    T ConvertToT(const string &str);
 
     string GetInfix();
     string GetPostfix();
     vector<string> GetOperands();
-    //double Calculate(map<string, double> values = {});
+    // double Calculate(map<string, double> values = {});
     T Calculate(map<string, T> values = {});
     void PrintLexems();
 };
 
-
-template<typename T>
+template <typename T>
 Arithmetic<T>::Arithmetic(string _infix) : infix(_infix) {
     if (CorrectBrackets()) {
         ToParsingLexem();
@@ -70,25 +69,26 @@ Arithmetic<T>::Arithmetic(string _infix) : infix(_infix) {
         throw invalid_argument("Error Correct Bracket");
     }
 }
-template<typename T>
+template <typename T>
 bool Arithmetic<T>::CorrectBrackets() {
     Stake<string> check;
     int flag_operant = 1;
     string oper = "+-/*";
     int last_index;
     for (int i = 0; i < infix.length(); i++) {
-        if (infix[i] == ' ') { // пропускаем пробелы
+        if (infix[i] == ' ') {  // пропускаем пробелы
             continue;
         }
 
-        if (flag_operant && i < infix.length() - 1) { // если только что была операция
-            if (infix[i] == '.' || infix[i] == ')' || // после операции не идет дробное и ) или после операции не идет .
+        if (flag_operant && i < infix.length() - 1) {  // если только что была операция
+            if (infix[i] == '.' ||
+                infix[i] == ')' ||  // после операции не идет дробное и ) или после операции не идет .
                 (i - 2 >= 0 && (infix[i - 2] == '(' || infix[i - 2] == '.'))) {
                 return false;
             }
         }
         if (oper.find(infix[i]) != std::string::npos) {
-            if (flag_operant) { // две операции не идет подряд
+            if (flag_operant) {  // две операции не идет подряд
                 return false;
             } else {
                 flag_operant = 1;
@@ -97,7 +97,7 @@ bool Arithmetic<T>::CorrectBrackets() {
             check.push("(");
             flag_operant = 0;
         } else if (infix[i] == ')') {
-            if (check.is_empty() || infix[last_index] == '(') { // то что есть закрывающая и нет ситуации ()
+            if (check.is_empty() || infix[last_index] == '(') {  // то что есть закрывающая и нет ситуации ()
                 return false;
             }
             check.pop();
@@ -112,21 +112,22 @@ bool Arithmetic<T>::CorrectBrackets() {
     }
     return true;
 }
-template<typename T>
+template <typename T>
 void Arithmetic<T>::ToParsingLexem() {
     int lenght = infix.size();
     string oper = "+-/*()";
     for (int i = 0; i < lenght; i++) {
         if (oper.find(infix[i]) != std::string::npos) {
-            Lexem tmp(string(&infix[i], 1), 0); // добавляем операцию 
+            Lexem tmp(string(&infix[i], 1), 0);  // добавляем операцию
             lexems.push_back(tmp);
         } else if (isdigit(infix[i]) != 0) {
             string number = "";
-            int flag = 1; 
-            while (i < lenght && (isdigit(infix[i]) != 0 || infix[i] == '.')) { // парсим число пока есть числа подряд или .
-                if(flag && infix[i] == '.'){
+            int flag = 1;
+            while (i < lenght && (isdigit(infix[i]) != 0 ||
+                                  infix[i] == '.')) {  // парсим число пока есть числа подряд или .
+                if (flag && infix[i] == '.') {
                     flag = 0;
-                }else if(!flag && infix[i] == '.'){ // если в дробном числе две точки
+                } else if (!flag && infix[i] == '.') {  // если в дробном числе две точки
                     throw invalid_argument("two dot");
                 }
                 number += infix[i];
@@ -137,12 +138,12 @@ void Arithmetic<T>::ToParsingLexem() {
             lexems.push_back(Lexem(number, 2));
 
         } else if (isalnum(infix[i])) {
-            Lexem tmp(string(&infix[i], 1), 1); // добавляем переменную
+            Lexem tmp(string(&infix[i], 1), 1);  // добавляем переменную
             lexems.push_back(tmp);
         }
     }
 }
-template<typename T>
+template <typename T>
 void Arithmetic<T>::TranslationToPost() {
     Stake<Lexem> stake;
     string result = "";
@@ -154,7 +155,7 @@ void Arithmetic<T>::TranslationToPost() {
                 stake.push(tmp);
             } else if (lexems[i].GetName() == ")") {
                 Lexem tmp = stake.pop();
-                while (tmp.GetName() != "(") { // достаем до закрывания скобки
+                while (tmp.GetName() != "(") {  // достаем до закрывания скобки
                     postfix.push_back(tmp);
                     tmp = stake.pop();
                 }
@@ -163,13 +164,13 @@ void Arithmetic<T>::TranslationToPost() {
                 Lexem tmp = stake.top();
                 while (!stake.is_empty() &&
                        (tmp.GetName() != "(" && (priority[tmp.GetName()] >= priority[lexems[i].GetName()]))) {
-                    postfix.push_back(stake.pop()); // пока приоритет >= текущего против которого вытаскиваю
+                    postfix.push_back(stake.pop());  // пока приоритет >= текущего против которого вытаскиваю
                     tmp = stake.top();
                 }
                 stake.push(lexems[i]);
             }
         } else {
-            postfix.push_back(lexems[i]); //  число добавляется
+            postfix.push_back(lexems[i]);  //  число добавляется
         }
     }
     while (!stake.is_empty()) {
@@ -177,7 +178,7 @@ void Arithmetic<T>::TranslationToPost() {
     }
 }
 
-template<typename T>
+template <typename T>
 void Arithmetic<T>::InputOperands() {
     for (Lexem lexem : lexems) {
         if (isalpha((lexem.GetName()[0]))) {
@@ -188,23 +189,24 @@ void Arithmetic<T>::InputOperands() {
         }
     }
 }
-template<typename T>
-string Arithmetic<T>::GetInfix() { return infix; }
+template <typename T>
+string Arithmetic<T>::GetInfix() {
+    return infix;
+}
 
-
-template<typename T>
+template <typename T>
 string Arithmetic<T>::GetPostfix() {
     string res = "";
-    for(int i = 0; i < postfix.size(); i++){
+    for (int i = 0; i < postfix.size(); i++) {
         res += postfix[i].GetName();
-        if(i != postfix.size() - 1){
+        if (i != postfix.size() - 1) {
             res += " ";
         }
     }
     return res;
 }
 
-template<typename T>
+template <typename T>
 vector<string> Arithmetic<T>::GetOperands() {
     set<string> unique_operands;
     for (auto lexem : lexems) {
@@ -215,8 +217,7 @@ vector<string> Arithmetic<T>::GetOperands() {
     return vector<string>(unique_operands.begin(), unique_operands.end());
 }
 
-
-template<typename T>
+template <typename T>
 T Arithmetic<T>::Calculate(map<string, T> values) {
     if (values.size() == 0) {
         InputOperands();
@@ -257,8 +258,8 @@ T Arithmetic<T>::Calculate(map<string, T> values) {
     return stake.pop();
 }
 
-template<typename T>
-T Arithmetic<T>::ConvertToT(const string& str) {
+template <typename T>
+T Arithmetic<T>::ConvertToT(const string &str) {
     if constexpr (is_same_v<T, double>) {
         return stod(str);
     } else if constexpr (is_same_v<T, int>) {
@@ -268,8 +269,7 @@ T Arithmetic<T>::ConvertToT(const string& str) {
     }
 }
 
-
-template<typename T>
+template <typename T>
 void Arithmetic<T>::PrintLexems() {
     for (auto lexem : lexems) {
         cout << lexem.GetName();

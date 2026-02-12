@@ -39,17 +39,15 @@ class Polinom : public TSimpleList<Monom> {
     Polinom operator+(const Polinom& pol);
     Polinom operator+=(const Monom& monom);
     Polinom operator*(const Polinom& pol);
-    Polinom operator-(const Polinom& pol); // самониучтожение добавить 
+    Polinom operator-(const Polinom& pol);  // самониучтожение добавить
     Polinom operator/(const Polinom& pol);
 
     Polinom operator+(double pol);
     Polinom operator-(double pol);
     Polinom operator*(double pol);
 
-
     bool operator!=(int number);
     bool operator==(const Polinom& pol) const;
-
 
     ~Polinom();
 

@@ -12,9 +12,7 @@ Polinom::Polinom(Monom monom) {
     pFirst = tmp;
 }
 
-Polinom::Polinom(double number){
-    PushFront(Monom{number, 0});
-}
+Polinom::Polinom(double number) { PushFront(Monom{number, 0}); }
 
 Polinom::Polinom(string pol_str) {
     pol_str.erase(remove(pol_str.begin(), pol_str.end(), ' '), pol_str.end());
@@ -23,60 +21,59 @@ Polinom::Polinom(string pol_str) {
         map<string, double> res = parseMonom(Monoms[i]);
         PushFront(Monom{res["value"], ((int)res["x"] * 100 + (int)res["y"] * 10 + (int)res["z"])});
     }
-    if(Monoms.size() == 0){
+    if (Monoms.size() == 0) {
         PushFront(Monom{0.0, 0});
     }
 }
 
 Polinom Polinom::operator+(const Polinom& pol) {
-    TNode* index_f = pFirst; TNode* index_s = pol.pFirst;
+    TNode* index_f = pFirst;
+    TNode* index_s = pol.pFirst;
     Polinom res;
     int index_res = 0;
     int flag = 1;
     while (index_f != nullptr && index_s != nullptr) {
         // log("TEK DEGRESS " + to_string(index_f->value.degrees) + ' ' + to_string(index_s->value.degrees) );
-        if (index_f != nullptr && index_s != nullptr &&
-            index_s->value.degrees == index_f->value.degrees) {
-            if((index_s->value.coeef + index_f->value.coeef) != 0){
-                res.PushAfter(index_res, Monom{index_s->value.coeef + index_f->value.coeef,
-                                           index_s->value.degrees});
+        if (index_f != nullptr && index_s != nullptr && index_s->value.degrees == index_f->value.degrees) {
+            if ((index_s->value.coeef + index_f->value.coeef) != 0) {
+                res.PushAfter(index_res,
+                              Monom{index_s->value.coeef + index_f->value.coeef, index_s->value.degrees});
                 index_res++;
-            }    
+            }
             index_f = index_f->pNext;
             index_s = index_s->pNext;
-            
+
         } else if (index_f != nullptr && index_s != nullptr &&
                    index_s->value.degrees > index_f->value.degrees) {
-            if(index_s->value.coeef != 0){
+            if (index_s->value.coeef != 0) {
                 res.PushAfter(index_res, Monom{index_s->value.coeef, index_s->value.degrees});
                 index_res++;
             }
             index_s = index_s->pNext;
-            
+
         } else if (index_f != nullptr) {
-            if(index_f->value.coeef != 0){
+            if (index_f->value.coeef != 0) {
                 res.PushAfter(index_res, Monom{index_f->value.coeef, index_f->value.degrees});
                 index_res++;
             }
             index_f = index_f->pNext;
-            
         }
     }
-    while(index_f != nullptr){
-        if(index_f->value.coeef != 0){
+    while (index_f != nullptr) {
+        if (index_f->value.coeef != 0) {
             res.PushAfter(index_res, Monom{index_f->value.coeef, index_f->value.degrees});
             index_res++;
         }
         index_f = index_f->pNext;
     }
-    while(index_s != nullptr){
-        if(index_s->value.coeef != 0){
+    while (index_s != nullptr) {
+        if (index_s->value.coeef != 0) {
             res.PushAfter(index_res, Monom{index_s->value.coeef, index_s->value.degrees});
             index_res++;
         }
         index_s = index_s->pNext;
     }
-    if(res.Front().degrees == 0 && res.Front().coeef == 0 && res.size() != 1){
+    if (res.Front().degrees == 0 && res.Front().coeef == 0 && res.size() != 1) {
         res.PopFront();
     }
     return res;
@@ -84,14 +81,14 @@ Polinom Polinom::operator+(const Polinom& pol) {
 
 Polinom Polinom::operator+=(const Monom& monom) {
     int flag = 1;
-    if(monom.coeef == 0){
+    if (monom.coeef == 0) {
         return *this;
     }
     for (int i = 0; i < size(); i++) {
         if ((*this)[i].degrees == monom.degrees) {
             (*this)[i].coeef += monom.coeef;
             flag = 0;
-             break;
+            break;
         }
     }
     if (flag) {
@@ -109,62 +106,53 @@ Polinom Polinom::operator+=(const Monom& monom) {
     return *this;
 }
 
-
 Polinom Polinom::operator-(const Polinom& pol) {
     Polinom obrat("-1");
     Polinom tmp((obrat * pol).Print());
     return tmp + (*this);
 }
 
-
-
 Polinom Polinom::operator*(const Polinom& pol) {
     Polinom tmp;
     for (int i = 0; i < (*this).size(); i++) {
         for (int j = 0; j < pol.size(); j++) {
-            if(((*this)[i].coeef * pol[j].coeef) != 0){
+            if (((*this)[i].coeef * pol[j].coeef) != 0) {
                 tmp += Monom{(*this)[i].coeef * pol[j].coeef, (*this)[i].degrees + pol[j].degrees};
-
             }
         }
     }
     int n = tmp.size();
-    if(n > 1 && tmp[n - 1].coeef == 0 && tmp[n - 1].degrees == 0){
+    if (n > 1 && tmp[n - 1].coeef == 0 && tmp[n - 1].degrees == 0) {
         tmp.EraseAfter(n - 2);
     }
     return tmp;
 }
 
-Polinom Polinom::operator/(const Polinom& pol){
-    return Polinom("1");
-}
+Polinom Polinom::operator/(const Polinom& pol) { return Polinom("1"); }
 
-Polinom Polinom::operator+(double pol){
+Polinom Polinom::operator+(double pol) {
     Polinom tmp(to_string(pol));
     return (*this) + tmp;
 }
 
-Polinom Polinom::operator-(double pol){
+Polinom Polinom::operator-(double pol) {
     Polinom tmp(to_string(pol));
     return (*this) - tmp;
 }
 
-Polinom Polinom::operator*(double pol){
+Polinom Polinom::operator*(double pol) {
     Polinom tmp(to_string(pol));
     return (*this) * tmp;
 }
 
-bool Polinom::operator!=(int number){
-    if(size() == 1 && pFirst->value.coeef == number){
+bool Polinom::operator!=(int number) {
+    if (size() == 1 && pFirst->value.coeef == number) {
         return true;
     }
     return false;
 }
 
-bool Polinom::operator==(const Polinom& pol) const{
-    return Print() == pol.Print();
-}
-
+bool Polinom::operator==(const Polinom& pol) const { return Print() == pol.Print(); }
 
 Polinom::~Polinom() {}
 
@@ -192,7 +180,7 @@ string Polinom::Print() {
     return final;
 }
 
-string Polinom::Print() const{
+string Polinom::Print() const {
     vector<string> res;
     string final = "";
     for (int i = 0; i < size(); i++) {
@@ -248,8 +236,8 @@ map<string, double> parseMonom(string Monom) {
     bool flag = 1, flag_x = 1, flag_y = 1, flag_z = 1;
     string value = "";
     for (int i = 0; i < Monom.size(); i++) {
-        if(i == 0 && Monom[i] == '-'){
-            value+='-';
+        if (i == 0 && Monom[i] == '-') {
+            value += '-';
             continue;
         }
         if ((!isdigit(Monom[i]) && Monom[i] != '.') && flag) {
