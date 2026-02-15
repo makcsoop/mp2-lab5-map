@@ -11,6 +11,7 @@ TEST(TableArrSortTest, AddKeys) {
     EXPECT_EQ(table["test"], 1);
     table.Insert("gfsfsaf", 10);
     EXPECT_EQ(table["gfsfsaf"], 10);
+    
 }
 
 
@@ -19,6 +20,7 @@ TEST(TableArrSortTest, SortKey) {
     table[1] = "one";
     table[3] = "three";
     table[2] = "two";
+
     EXPECT_EQ(table.keys(), vector<int>({1, 2, 3}));
 }
 

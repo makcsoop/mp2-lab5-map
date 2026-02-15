@@ -32,9 +32,16 @@ class TableArrSort : public Map<T, H> {
 
    public:
     H* Find(T key) {
-        for (size_t i = 0; i < data.size(); i++) {
-            if (data[i].key == key) {
-                return &data[i].value;
+        int l = 0, r = data.size() - 1;
+        while (l <= r) {
+            int middle = l + (r - l) / 2;
+            if (data[middle].key == key) {
+                return &data[middle].value;
+            }
+            if (data[middle].key > key) {
+                r = middle - 1;
+            } else {
+                l = middle + 1;
             }
         }
         return nullptr;
@@ -42,7 +49,7 @@ class TableArrSort : public Map<T, H> {
 
     H& operator[](T key) {
         auto result = Find(key);
-        if (result) return *result;
+        if (result != nullptr) return *result;
         for (size_t i = 0; i < data.size(); i++) {
             if (data[i].key > key) {
                 data.insert(data.begin() + i, Pair{key, H{}});
@@ -69,11 +76,11 @@ class TableArrSort : public Map<T, H> {
     }
 
     void Insert(T key, H value) {
-        if (Find(key)) {
+        if (Find(key) != nullptr) {
             return;
         }
         for (size_t i = 0; i < data.size(); i++) {
-            if (data[i].key < key) {
+            if (data[i].key > key) {
                 data.insert(data.begin() + i, Pair{key, value});
                 return;
             }
