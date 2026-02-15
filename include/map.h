@@ -41,12 +41,15 @@ class TableArrSort : public Map<T, H> {
     }
 
     H& operator[](T key) {
+        auto result = Find(key);
+        if (result) return *result;
         for (size_t i = 0; i < data.size(); i++) {
-            if (data[i].key == key) {
+            if (data[i].key > key) {
+                data.insert(data.begin() + i, Pair{key, H{}});
                 return data[i].value;
             }
         }
-        data.push_back(Pair{key, H{}});
+        data.push_back(Pair(key, H{}));
         return data[data.size() - 1].value;
     }
     void Print() {
@@ -69,18 +72,23 @@ class TableArrSort : public Map<T, H> {
         if (Find(key)) {
             return;
         }
+        for (size_t i = 0; i < data.size(); i++) {
+            if (data[i].key < key) {
+                data.insert(data.begin() + i, Pair{key, value});
+                return;
+            }
+        }
         data.push_back(Pair{key, value});
     }
 
     void Delete(T key) {
-        int count = 0;
         for (size_t i = 0; i < data.size(); i++) {
             if (data[i].key == key) {
-                data.erase(data.begin() + count);
+                data.erase(data.begin() + i);
                 return;
             }
-            count++;
         }
+        throw invalid_argument("Key error");
     }
 
     int count() { return data.size(); }
