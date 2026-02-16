@@ -112,10 +112,10 @@ class TableArrSort : public Map<T, H> {
 };
 
 template <typename T, typename H>
+
 class MapLists : public Map<T, H> {
    private:
     using typename Map<T, H>::Pair;
-
     struct TNode {
         Pair data;
         TNode* pNext;
@@ -127,15 +127,23 @@ class MapLists : public Map<T, H> {
 
    public:
     MapLists() = default;
-    Insert(Pair<T key1, H value>) {
-        if (Find(key1) != nullptr) {
-            return 0;
+    ~MapLists() {
+        TNode* current = pFirst;
+        while (current != nullptr) {
+            TNode* tmp = pFirst;
+            pFirst = pFirst->pNext;
+            delete tmp;
         }
-        Pair newPair{key1, value};
+    }
+    void Insert(T key, H value) {
+        if (Find(key) != nullptr) {
+            return;
+        }
+        Pair newPair{key, value};
         pFirst = new TNode(newPair, pFirst);
         sz++;
     }
-    Find(T key) {
+    H* Find(T key) {
         TNode* Current = pFirst;
         while (Current != nullptr) {
             if (Current->data.key == key) {
@@ -143,21 +151,19 @@ class MapLists : public Map<T, H> {
             }
             Current = Current->pNext;
         }
-        pFirst = new TNode(Pair{key, H{}}, pFirst);
-        sz++;
-        return pFirst->data.value;
+        return nullptr;
     }
-    count() { return sz; }
-    keys() {
+    int count() { return sz; }
+    vector<T> keys() {
         TNode* current = pFirst;
         vector<T> _keys;
         while (current != nullptr) {
-            keys.push_back(current->data.key);
+            _keys.push_back(current->data.key);
             current = current->pNext;
         }
         return _keys;
     }
-    Delete(T _key) {
+    void Delete(T _key) {
         if (pFirst == nullptr) return;
         if (pFirst->data.key == _key) {
             TNode* tmp = pFirst;
