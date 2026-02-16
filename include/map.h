@@ -128,7 +128,16 @@ class MapLists : public Map<T, H> {
 
    public:
     MapLists() = default;
-    Insert(Pair<T key1, H value>) {
+    ~MapLists(){
+        TNode* current = pFirst;
+        while(current!=nullptr){
+            TNode* tmp = pFirst;
+            pFirst = pFirst->pNext;
+            delete tmp;
+        }
+
+    }
+    void Insert(Pair<T key1, H value>) {
         if (Find(key1) != nullptr) {
             return 0;
         }
@@ -136,7 +145,7 @@ class MapLists : public Map<T, H> {
         pFirst = new TNode(newPair, pFirst);
         sz++;
     }
-    Find(T key) {
+    H* Find(T key) {
         TNode* Current = pFirst;
         while (Current != nullptr) {
             if (Current->data.key == key) {
@@ -148,17 +157,17 @@ class MapLists : public Map<T, H> {
         sz++;
         return pFirst->data.value;
     }
-    count() { return sz; }
-    keys() {
+    int count() { return sz; }
+    vector<T> keys() {
         TNode* current = pFirst;
         vector<T> _keys;
         while (current != nullptr) {
-            keys.push_back(current->data.key);
+            _keys.push_back(current->data.key);
             current = current->pNext;
         }
         return _keys;
     }
-    Delete(T _key) {
+    void Delete(T _key) {
         if (pFirst == nullptr) return;
         if (pFirst->data.key == _key) {
             TNode* tmp = pFirst;
