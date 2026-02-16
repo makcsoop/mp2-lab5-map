@@ -111,7 +111,6 @@ class TableArrSort : public Map<T, H> {
     ~TableArrSort() = default;
 };
 
-
 template <typename T, typename H>
 class MapLists : public Map<T, H> {
    private:
