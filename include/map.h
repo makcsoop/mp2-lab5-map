@@ -111,12 +111,11 @@ class TableArrSort : public Map<T, H> {
     ~TableArrSort() = default;
 };
 
-
 template <typename T, typename H>
+
 class MapLists : public Map<T, H> {
    private:
     using typename Map<T, H>::Pair;
-
     struct TNode {
         Pair data;
         TNode* pNext;
@@ -128,20 +127,19 @@ class MapLists : public Map<T, H> {
 
    public:
     MapLists() = default;
-    ~MapLists(){
+    ~MapLists() {
         TNode* current = pFirst;
-        while(current!=nullptr){
+        while (current != nullptr) {
             TNode* tmp = pFirst;
             pFirst = pFirst->pNext;
             delete tmp;
         }
-
     }
-    void Insert(Pair<T key1, H value>) {
-        if (Find(key1) != nullptr) {
-            return 0;
+    void Insert(T key, H value) {
+        if (Find(key) != nullptr) {
+            return;
         }
-        Pair newPair{key1, value};
+        Pair newPair{key, value};
         pFirst = new TNode(newPair, pFirst);
         sz++;
     }
@@ -153,9 +151,7 @@ class MapLists : public Map<T, H> {
             }
             Current = Current->pNext;
         }
-        pFirst = new TNode(Pair{key, H{}}, pFirst);
-        sz++;
-        return pFirst->data.value;
+        return nullptr;
     }
     int count() { return sz; }
     vector<T> keys() {
