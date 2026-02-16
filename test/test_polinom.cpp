@@ -56,7 +56,6 @@ TEST(PolinomTest, OperatopPlus) {
     EXPECT_EQ(pol2[1].coeef, polinom[1].coeef * 2);
     EXPECT_EQ(pol2[2].coeef, polinom[2].coeef * 2);
     EXPECT_EQ(pol2.Print(), answer_pol.Print());
-    
 
     string pol3 = "40";
     Polinom polinom2(pol3);
@@ -99,7 +98,6 @@ TEST(PolinomTest, MulOperation) {
     EXPECT_EQ(pol5.Front().coeef, 1000);
 }
 
-
 TEST(PolinomTest, OperatopPlusDeatnNood) {
     string pol = "600x3y3z3+200x2y2z2+10x1y2z3+20";
     string pol2 = "600x3y3z2+-200x2y2z2+10x1y2z3+20";
@@ -116,7 +114,7 @@ TEST(PolinomTest, OperatopPlusDeatnNood) {
     EXPECT_DOUBLE_EQ(pol3[1].coeef, polinom[0].coeef);
 }
 
-TEST(PolinomTest, OperatirMinus){
+TEST(PolinomTest, OperatirMinus) {
     string pol = "600x3y3z3+200x2y2z2+10x1y2z3+20";
     Polinom polinom(pol);
     string pol2 = "600x3y3z3+-200x2y2z2+10x1y2z3+20";
@@ -126,7 +124,6 @@ TEST(PolinomTest, OperatirMinus){
     EXPECT_EQ(pol3[0].coeef, 400);
     EXPECT_EQ(pol3.Print(), "400x2y2z2");
 
-    
     string pol5 = "600x3y3z2+200x2y2z2+10x1y2z3";
     Polinom polinom3(pol5);
     Polinom pol4 = polinom - polinom3;
@@ -144,7 +141,7 @@ TEST(PolinomTest, MonomConstructor) {
 
 TEST(PolinomTest, EmptyStringConstructor) {
     Polinom polinom("");
-    EXPECT_EQ(polinom.size(), 1); 
+    EXPECT_EQ(polinom.size(), 1);
     EXPECT_DOUBLE_EQ(polinom[0].coeef, 0);
     EXPECT_EQ(polinom[0].degrees, 0);
 }
@@ -170,14 +167,14 @@ TEST(PolinomTest, StringConstructorWithSpaces) {
 TEST(PolinomTest, CopyConstructor) {
     string pol = "300x3y3z3+150x2y2z2+75";
     Polinom polinom1(pol);
-    Polinom polinom2(polinom1); 
-    
+    Polinom polinom2(polinom1);
+
     EXPECT_EQ(polinom2.size(), polinom1.size());
     EXPECT_DOUBLE_EQ(polinom2[0].coeef, polinom1[0].coeef);
     EXPECT_EQ(polinom2[0].degrees, polinom1[0].degrees);
     EXPECT_DOUBLE_EQ(polinom2[1].coeef, polinom1[1].coeef);
     EXPECT_EQ(polinom2[1].degrees, polinom1[1].degrees);
-    
+
     polinom2[0].coeef = 999;
     EXPECT_NE(polinom2[0].coeef, polinom1[0].coeef);
 }
@@ -185,8 +182,8 @@ TEST(PolinomTest, CopyConstructor) {
 TEST(PolinomTest, SelfAssignment) {
     string pol = "100x2y2z2+50x1y1z1+25";
     Polinom polinom(pol);
-    polinom = polinom; 
-    
+    polinom = polinom;
+
     EXPECT_EQ(polinom.size(), 3);
     EXPECT_DOUBLE_EQ(polinom[0].coeef, 100);
     EXPECT_DOUBLE_EQ(polinom[1].coeef, 50);
@@ -197,12 +194,12 @@ TEST(PolinomTest, OperatorPlusWithEmpty) {
     Polinom empty;
     string pol = "100x2y2z2+50";
     Polinom nonEmpty(pol);
-    
+
     Polinom result1 = empty + nonEmpty;
     EXPECT_EQ(result1.size(), 2);
     EXPECT_DOUBLE_EQ(result1[0].coeef, 100);
     EXPECT_DOUBLE_EQ(result1[1].coeef, 50);
-    
+
     Polinom result2 = nonEmpty + empty;
     EXPECT_EQ(result2.size(), 2);
     EXPECT_DOUBLE_EQ(result2[0].coeef, 100);
@@ -213,7 +210,7 @@ TEST(PolinomTest, OperatorPlusEqualsMonom) {
     Polinom polinom;
     Monom m1{10.5, 111};
     Monom m2{-5.5, 222};
-    
+
     polinom += m1;
     EXPECT_EQ(polinom.size(), 2);
     EXPECT_DOUBLE_EQ(polinom[0].coeef, 10.5);
@@ -228,7 +225,7 @@ TEST(PolinomTest, OperatorMultiplyByZero) {
     string pol = "100x2y2z2+50x1y1z1+25";
     Polinom polinom(pol);
     Polinom zero;
-    
+
     Polinom result = polinom * zero;
     EXPECT_EQ(result.size(), 1);
     EXPECT_DOUBLE_EQ(result[0].coeef, 0);
@@ -240,13 +237,12 @@ TEST(PolinomTest, OperatorMultiplyCommutative) {
     string pol2 = "3x1+2";
     Polinom p1(pol1);
     Polinom p2(pol2);
-    
+
     Polinom result1 = p1 * p2;
     Polinom result2 = p2 * p1;
-    
+
     EXPECT_EQ(result1.Print(), result2.Print());
 }
-
 
 TEST(PolinomTest, OperatorMinusWithSelf) {
     string pol = "100x2y2z2+50x1y1z1+25";
@@ -262,7 +258,7 @@ TEST(PolinomTest, OperatorMinusWithDifferentDegrees) {
     string pol2 = "30x2y2z2+20x1y1z1";
     Polinom p1(pol1);
     Polinom p2(pol2);
-    
+
     Polinom result = p1 - p2;
     EXPECT_EQ(result.size(), 3);
     EXPECT_DOUBLE_EQ(result[0].coeef, 100);
@@ -277,12 +273,12 @@ TEST(PolinomTest, PrintWithZeroCoefficient) {
     Monom m1{5.0, 111};
     Monom m2{0.0, 222};
     Monom m3{3.0, 0};
-    
+
     Polinom polinom;
     polinom += m1;
     polinom += m2;
     polinom += m3;
-    
+
     string result = polinom.Print();
     EXPECT_EQ(result, "5x1y1z1+3");
 }
@@ -295,13 +291,13 @@ TEST(PolinomTest, PrintWithSingleMonom) {
 TEST(PolinomTest, Destructor) {
     Polinom* polinom = new Polinom("100x2y2z2+50x1y1z1+25");
     delete polinom;
-    SUCCEED(); 
+    SUCCEED();
 }
 
 TEST(PolinomTest, MonomWithZeroDegree) {
     string pol = "5x0y0z0+3x1y0z0+2x0y1z0+1x0y0z1";
     Polinom polinom(pol);
-    
+
     EXPECT_EQ(polinom.size(), 4);
     EXPECT_DOUBLE_EQ(polinom[0].coeef, 5);
     EXPECT_EQ(polinom[0].degrees, 0);
@@ -313,8 +309,7 @@ TEST(PolinomTest, MonomWithZeroDegree) {
     EXPECT_EQ(polinom[3].degrees, 1);
 }
 
-
-TEST(PolinomTest, PolinomDouble){
+TEST(PolinomTest, PolinomDouble) {
     string pol = "50.2x1y1z1+20";
 
     Polinom polinom(pol);

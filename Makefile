@@ -6,7 +6,7 @@ samples = samples
 test = test
 GTEST_DIR = googletest/googletest
 
-all: test_map map
+all: clean test_map map
 
 test_map:
 	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp
@@ -22,8 +22,8 @@ test_map:
 		# -o test_map
 
 map:
-	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp
+	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp $(test)/*
 	$(CC) $(CFLAGS) $(src)/map.cpp $(samples)/main_map.cpp -Iinclude -o map
 
 clean:
-	rm -f map test_map
+	rm -f map test_map a.out
