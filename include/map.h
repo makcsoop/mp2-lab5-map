@@ -111,8 +111,8 @@ class TableArrSort : public Map<T, H> {
     ~TableArrSort() = default;
 };
 
+// НЕУПОРЯДОЧННЫЕ ТАБЛИЦЫ НА СПИСКАХ
 template <typename T, typename H>
-
 class MapLists : public Map<T, H> {
    private:
     using typename Map<T, H>::Pair;
