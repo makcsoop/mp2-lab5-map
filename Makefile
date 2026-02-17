@@ -19,10 +19,15 @@ test_map:
 		-Iinclude \
 		-I$(GTEST_DIR) \
 		-I$(GTEST_DIR)/include \
-		-pthread 
+		-pthread
 		# -o test_map
 
 map:
+	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp $(test)/*
+	$(CC) $(CFLAGS) $(src)/map.cpp $(src)/tree.cpp $(samples)/main_map.cpp -Iinclude -o map
+
+map_rebuild:
+	rm -f map test_map a.out
 	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp $(test)/*
 	$(CC) $(CFLAGS) $(src)/map.cpp $(src)/tree.cpp $(samples)/main_map.cpp -Iinclude -o map
 
