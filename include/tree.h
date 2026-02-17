@@ -60,7 +60,7 @@ class Tree : public Map<T, H> {
     vector<T> keys() { return vector<T>({9}); };
     H *Find(T key) {
         key = 0;
-        return pFirst->data.value;
+        return &pFirst->data.value;
     }
     ~Tree() = default;
 };

@@ -21,12 +21,12 @@ int main() {
         cout << x;
     }
 
-    // Tree<int, string> tree;
-    // tree.Insert(4, "gryasgf");
-    // tree.Insert(1, "key");
-    // tree.Insert(3, "gryasgf");
-    // tree.Insert(2, "gryasgf");
-    // tree.printTree(tree.Get_pFirst());
+    Tree<int, string> tree;
+    tree.Insert(4, "gryasgf");
+    tree.Insert(1, "key");
+    tree.Insert(3, "gryasgf");
+    tree.Insert(2, "gryasgf");
+    tree.printTree(tree.Get_pFirst());
 
     cout << "SUCCESS";
 }
