@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 
 #include "../include/map.h"
 #include "../include/tree.h"

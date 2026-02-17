@@ -46,3 +46,37 @@ TEST_F(TableSortData, Find) {
     EXPECT_EQ(*table.Find(2), "two");
     EXPECT_EQ(table.Find(10), nullptr);
 }
+
+class TableSortDataLists : public TableData<MapLists<int, string>> {};
+
+TEST(MapListsTest, AddKeys) {
+    MapLists<string, int> table;
+    table["test"] = 1;
+    EXPECT_EQ(table["test"], 1);
+    table.Insert("gfsfsaf", 10);
+    EXPECT_EQ(table["gfsfsaf"], 10);
+}
+
+TEST_F(TableSortDataLists, SortKey) { EXPECT_EQ(table.keys(), vector<int>({2, 3, 1})); }
+
+TEST_F(TableSortDataLists, DeleteKey) {
+    EXPECT_THROW(table.Delete(10), invalid_argument);
+    EXPECT_NO_THROW(table.Delete(1));
+}
+
+TEST_F(TableSortDataLists, Count) {
+    EXPECT_EQ(table.count(), 3);
+    table[4] = "two";
+    EXPECT_EQ(table.count(), 4);
+}
+
+TEST_F(TableSortDataLists, Keys) {
+    EXPECT_EQ(table.keys(), vector<int>({2, 3, 1}));
+    table[4] = "four";
+    EXPECT_EQ(table.keys(), vector<int>({4, 2, 3, 1}));
+}
+
+TEST_F(TableSortDataLists, Find) {
+    EXPECT_EQ(*table.Find(2), "two");
+    EXPECT_EQ(table.Find(10), nullptr);
+}

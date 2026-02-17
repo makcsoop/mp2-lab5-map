@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <vector>
+
+#include "TSimpleList.h"
 using namespace std;
 
 template <typename T, typename H>
@@ -116,72 +118,49 @@ template <typename T, typename H>
 class MapLists : public Map<T, H> {
    private:
     using typename Map<T, H>::Pair;
-    struct TNode {
-        Pair data;
-        TNode* pNext;
-        TNode(Pair p, TNode* next = nullptr) : data(p), pNext(next) {}
-    };
-
-    TNode* pFirst;
-    int sz;
+    TSimpleList<Pair> list;
 
    public:
-    MapLists() = default;
-    ~MapLists() {
-        TNode* current = pFirst;
-        while (current != nullptr) {
-            TNode* tmp = pFirst;
-            pFirst = pFirst->pNext;
-            delete tmp;
-        }
-    }
+    MapLists() {}
+    ~MapLists() { list.~TSimpleList(); }
     void Insert(T key, H value) {
         if (Find(key) != nullptr) {
             return;
         }
         Pair newPair{key, value};
-        pFirst = new TNode(newPair, pFirst);
-        sz++;
+        list.PushFront(newPair);
     }
     H* Find(T key) {
-        TNode* Current = pFirst;
-        while (Current != nullptr) {
-            if (Current->data.key == key) {
-                return Current->data.value;
+        for (int i = 0; i < list.size(); i++) {
+            if (list[i].key == key) {
+                return &list[i].value;
             }
-            Current = Current->pNext;
         }
         return nullptr;
     }
-    int count() { return sz; }
+    int count() { return list.size(); }
     vector<T> keys() {
-        TNode* current = pFirst;
         vector<T> _keys;
-        while (current != nullptr) {
-            _keys.push_back(current->data.key);
-            current = current->pNext;
+        for (int i = 0; i < list.size(); i++) {
+            _keys.push_back(list[i].key);
         }
         return _keys;
     }
     void Delete(T _key) {
-        if (pFirst == nullptr) return;
-        if (pFirst->data.key == _key) {
-            TNode* tmp = pFirst;
-            pFirst = pFirst->pNext;
-            delete tmp;
-            sz--;
-            return;
-        }
-        TNode* current = pFirst;
-        while (current->pNext != nullptr) {
-            if (current->pNext->data.key == _key) {
-                TNode* tmp = current->pNext;
-                current->pNext = current->pNext->pNext;
-                delete tmp;
-                sz--;
-                return;
+        bool fl = 0;
+        if (list.GetFirst()->value.key == _key) {
+            list.PopFront();
+            fl = 1;
+        } else {
+            for (int i = 0; i < list.size(); i++) {
+                if (list[i].key == _key) {
+                    list.EraseAfter(i - 1);
+                    fl = 1;
+                }
             }
-            current = current->pNext;
+        }
+        if (fl == 0) {
+            throw invalid_argument("Invalid argument");
         }
     }
     H& operator[](T key) {
@@ -189,11 +168,9 @@ class MapLists : public Map<T, H> {
         if (result != nullptr)
             return *result;
         else {
-            TNode* tmp = pFirst;
-            tmp->data.key = key;
-            tmp->data.value = H{};
-            pFirst = tmp;
+            Pair newpair{key, H{}};
+            list.PushFront(newpair);
+            return list.GetFirst()->value.value;
         }
-        return pFirst->data.value;
     }
 };
