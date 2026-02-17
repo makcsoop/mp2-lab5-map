@@ -184,4 +184,16 @@ class MapLists : public Map<T, H> {
             current = current->pNext;
         }
     }
+    H& operator[](T key) {
+        auto result = Find(key);
+        if (result != nullptr)
+            return *result;
+        else {
+            TNode* tmp = pFirst;
+            tmp->data.key = key;
+            tmp->data.value = H{};
+            pFirst = tmp;
+        }
+        return pFirst->data.value;
+    }
 };
