@@ -13,7 +13,7 @@ class Map {
         H value;
     };
     Map() = default;
-    virtual ~Map() = default;
+    ~Map() = default;
     virtual void Insert(T key, H value) = 0;
     virtual void Delete(T key) = 0;
     virtual int count() = 0;
@@ -72,7 +72,7 @@ class TableArrSort : public Map<T, H> {
             }
             cout << "\n";
         }
-        cout << "{\n";
+        cout << "}\n";
     }
 
     void Insert(T key, H value) {

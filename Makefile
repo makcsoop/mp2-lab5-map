@@ -12,6 +12,7 @@ test_map:
 	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp
 	$(CC) $(CFLAGS) \
 		$(src)/map.cpp \
+		$(src)/tree.cpp \
 		$(test)/test_map.cpp \
 		$(GTEST_DIR)/src/gtest-all.cc \
 		$(GTEST_DIR)/src/gtest_main.cc \
@@ -23,7 +24,7 @@ test_map:
 
 map:
 	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp $(test)/*
-	$(CC) $(CFLAGS) $(src)/map.cpp $(samples)/main_map.cpp -Iinclude -o map
+	$(CC) $(CFLAGS) $(src)/map.cpp $(src)/tree.cpp $(samples)/main_map.cpp -Iinclude -o map
 
 clean:
 	rm -f map test_map a.out
