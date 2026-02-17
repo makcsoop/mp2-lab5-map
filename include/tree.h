@@ -10,7 +10,7 @@ class Tree : public Map<T, H> {
     Node *pFirst;
 
    public:
-    Tree() : pFirst(nullptr) {};
+    Tree() : pFirst(nullptr){};
     Node *Get_pFirst() { return pFirst; }
     void Insert(T key, H value) {
         if (pFirst == nullptr) {
