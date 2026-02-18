@@ -4,7 +4,6 @@
 #include <utility>
 #include <vector>
 
-#include "map.h"
 using namespace std;
 
 template <typename T>
@@ -18,7 +17,7 @@ class TSimpleList {
     int sz;
 
    public:
-    TSimpleList() : pFirst(nullptr), sz(0){};
+    TSimpleList() : pFirst(nullptr), sz(0) {};
     TSimpleList(const vector<T>& v);
     TSimpleList(const TSimpleList& list);
     TSimpleList(TSimpleList&& list) noexcept;
@@ -108,7 +107,6 @@ TSimpleList<T>& TSimpleList<T>::operator=(const TSimpleList& list) {
     }
 
     TNode* oldFirst = pFirst;
-    int oldSize = sz;
 
     pFirst = new TNode{list.pFirst->value, nullptr};
     sz = list.sz;

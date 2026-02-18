@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <gtest.h>
 
 // g++ test/*.cpp  -I./include src/*.cpp -I./gtest gtest/gtest-all.cc
 // сборка всех тестов

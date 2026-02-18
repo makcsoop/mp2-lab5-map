@@ -19,9 +19,9 @@ class Tree : public Map<T, H> {
    public:
     Tree() : pFirst(nullptr) {}
 
-    Tree(T key, H value) : pFirst(Pair{key, value}, nullptr, nullptr, nullptr) {}
+    Tree(T key, H value) : pFirst(new Node(Pair{key, value}, nullptr, nullptr, nullptr)) {}
 
-    Tree(vector<int> elements) {
+    Tree(vector<T> elements) {  // ?????????
         sort(elements.begin(), elements.end());
         int plug = 0;
         while (elements.size() != 0) {
@@ -100,7 +100,8 @@ class Tree : public Map<T, H> {
     Node *GetNext(Node *current) {
         if (current != pFirst) {
             if (current->parent->right->data.key == current->data.key) {
-                return pFirst; //(обработка максимального звена) если бросить исключение то эта дура начинает сбрасывать память, как заглушка пока пусть так
+                return pFirst;  //(обработка максимального звена) если бросить исключение то эта дура начинает
+                                // сбрасывать память, как заглушка пока пусть так
             }
         }
         if (current->right != nullptr) {
@@ -125,28 +126,32 @@ class Tree : public Map<T, H> {
 
     void Delete(T key) { key++; }
 
-
     int count() { return sz; };
 
+    vector<T> keys() {
+        vector<T> data;
+        RecTree(GetFirst(), data);
+        sort(data.begin(), data.end());
+        return data;
+    };
 
-    vector<T> keys() { return vector<T>({9}); };
-
+    void RecTree(const Node *node, vector<T> &keys) {
+        if (node == nullptr) return;
+        keys.push_back(node->data.key);
+        RecTree(node->left, keys);
+        RecTree(node->right, keys);
+    }
 
     H *Find(T key) {
         Node *current = pFirst;
-        bool ___coco_jambo = 0;
-        while (!___coco_jambo) {
+        while (current != nullptr) {
             if (current->data.key == key) {
                 return &current->data.value;
             }
-            while (current->data.key > key) {
+            if (current->data.key > key) {
                 current = current->left;
-            }
-            while (current->data.key < key) {
+            } else {
                 current = current->right;
-            }
-            if (current == nullptr) {
-                ___coco_jambo = 1;
             }
         }
         return nullptr;
