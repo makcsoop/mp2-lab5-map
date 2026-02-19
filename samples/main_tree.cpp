@@ -20,5 +20,7 @@ int main() {
     for (auto i : tree) {
         cout << i.data.key << endl;
     }
+    auto it = tree.begin();
+    cout << it[2].data.key << endl;
     cout << "SUCCESS";
 }

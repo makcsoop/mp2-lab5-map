@@ -51,6 +51,25 @@ class Tree : public Map<T, H> {
             return tmp;
         }
 
+        Iterator operator+(difference_type n) const {
+            Iterator tmp = *this;
+            return tmp += n;
+        }
+
+        Iterator &operator+=(difference_type n) {
+            while (n > 0) {
+                ++(*this);
+                --n;
+            }
+            return *this;
+        }
+
+        reference operator[](difference_type n) {
+            Iterator tmp = *this;
+            tmp += n;
+            return *tmp;
+        }
+
         friend bool operator==(const Iterator &a, const Iterator &b) { return a.m_ptr == b.m_ptr; };
         friend bool operator!=(const Iterator &a, const Iterator &b) { return a.m_ptr != b.m_ptr; };
         pointer m_ptr;
@@ -74,7 +93,7 @@ class Tree : public Map<T, H> {
 
     Tree(T key, H value) : pFirst(new Node(Pair{key, value}, nullptr, nullptr, nullptr)) {}
 
-    Tree(vector<T> elements) {  // ?????????
+    Tree(vector<T> elements) {
         sort(elements.begin(), elements.end());
         int plug = 0;
         pFirst = nullptr;

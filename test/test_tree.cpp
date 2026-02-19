@@ -2,6 +2,7 @@
 #include <tree.h>
 
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -15,6 +16,14 @@ class TableData : public ::testing::Test {
         table.Insert(3, "one");
     }
 };
+
+class IteratorData : public ::testing::Test {
+   protected:
+    vector<int> el{10, 20, 30, 40, 50, 60, 65, 70, 80};
+    Tree<int, string> tree;
+    IteratorData() : tree(el) {}
+};
+
 
 class BasicTreeData : public TableData<Tree<int, string>> {};
 
@@ -105,3 +114,25 @@ TEST(BasicTree, DeleteNodes3) {
     EXPECT_NE(table.FindNode(75), nullptr);
     EXPECT_NE(table.FindNode(85), nullptr);
 }
+
+
+TEST_F(IteratorData, RoundTree){
+    int index = 0;
+    for(auto x: tree){
+        EXPECT_EQ(x.data.key, el[index]);
+        index++;
+    }
+}
+
+TEST_F(IteratorData, ItIndexNode){
+    auto it = tree.begin();
+    EXPECT_EQ(it[2].data.key, 30);
+    EXPECT_EQ(it[0].data.key, 10);
+    EXPECT_EQ(it[5].data.key, 60);
+    EXPECT_EQ((it+3)->data.key, 40);
+    it += 5;
+    EXPECT_EQ(it->data.key, 60);
+    it++;
+    EXPECT_EQ(it->data.key, 65);
+}
+
