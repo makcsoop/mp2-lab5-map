@@ -81,17 +81,42 @@ class Tree : public Map<T, H> {
         }
     }
 
-    void Print() {}
+    void InsertNode(Node *current) {
+        if (pFirst == nullptr) {
+            pFirst = current;
+            sz++;
+        } else {
+            Node *tmp = pFirst;
+            while (true) {
+                if (tmp->data.key > current->data.key) {
+                    if (tmp->left != nullptr) {
+                        tmp = tmp->left;
+                    } else {
+                        tmp->left = current;
+                        sz++;
+                        break;
+                    }
+                } else if (tmp->data.key < current->data.key) {
+                    if (tmp->right != nullptr) {
+                        tmp = tmp->right;
+                    } else {
+                        tmp->right = current;
+                        sz++;
+                        break;
+                    }
+                } else {
+                    throw invalid_argument("Incorrect insert");
+                }
+            }
+        }
+    }
 
     void printTree(Node *root, std::string indent = "", bool isLeft = true) {
         if (root == nullptr) return;
-
         if (root->right) {
             printTree(root->right, indent + (isLeft ? "│   " : "    "), false);
         }
-
-        std::cout << indent << (isLeft ? "└── " : "┌── ") << root->data.key << std::endl;
-
+        cout << indent << (isLeft ? "└── " : "┌── ") << root->data.key << endl;
         if (root->left) {
             printTree(root->left, indent + (isLeft ? "    " : "│   "), true);
         }
@@ -100,7 +125,7 @@ class Tree : public Map<T, H> {
     Node *GetNext(Node *current) {
         if (current != pFirst) {
             if (current->parent->right->data.key == current->data.key) {
-                return pFirst;  //(обработка максимального звена) если бросить исключение то эта дура начинает
+                return pFirst;  //(обработка максимального звена) если бросить исключение то эта начинает
                                 // сбрасывать память, как заглушка пока пусть так
             }
         }
@@ -124,7 +149,40 @@ class Tree : public Map<T, H> {
         }
     }
 
-    void Delete(T key) { key++; }
+    void Delete(T key) {
+        Node *node = FindNode(key);
+        if (node->left == nullptr && node->right == nullptr) {  // удаление листа
+            Node *parent = node->parent;
+            if (parent->left == node) {
+                parent->left = nullptr;
+            } else {
+                parent->right = nullptr;
+            }
+
+        } else if (((node->left == nullptr) + (node->right == nullptr)) == 1) {  // один потомок
+            Node *parent = node->parent;
+            Node *next = (node->left == nullptr) ? node->right : node->left;
+            if (parent->left != nullptr) {
+                parent->left = next;
+            } else {
+                parent->right = next;
+            }
+        } else {  // 2 потомка
+            Node *parent = node->parent;
+            Node *right = node->right;
+            Node *left = node->left;
+            if (parent->left == node) {
+                parent->left = left;
+                InsertNode(right);
+
+            } else {
+                parent->right = right;
+                InsertNode(left);
+            }
+        }
+        delete node;
+        sz--;
+    }
 
     int count() { return sz; };
 
@@ -156,9 +214,6 @@ class Tree : public Map<T, H> {
         }
         return nullptr;
     }
-
-    // тестил файнд, он просто мусор выкидывает в случае H*, у нас и так здесь ключей нема. поэтому решил
-    // сделать еще такое
 
     Node *FindNode(T key) {
         Node *current = pFirst;
