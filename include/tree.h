@@ -1,6 +1,8 @@
 #include <map.h>
 
 #include <algorithm>
+#include <cstddef>   // For std::ptrdiff_t
+#include <iterator>  // For std::forward_iterator_tag
 #include <vector>
 
 template <typename T, typename H>
@@ -13,10 +15,61 @@ class Tree : public Map<T, H> {
         Node(const Pair &d, Node *l = nullptr, Node *r = nullptr, Node *p = nullptr)
             : data(d), left(l), right(r), parent(p) {}
     };
+
+    struct Iterator {
+        using iterator_category = std::forward_iterator_tag;
+        using difference_type = std::ptrdiff_t;
+        using value_type = Node;
+        using pointer = Node *;    // or also value_type*
+        using reference = Node &;  // or also value_type&
+
+        Iterator(pointer ptr) : m_ptr(ptr) {}
+        reference operator*() const { return *m_ptr; }
+        pointer operator->() { return m_ptr; }
+
+        Iterator &operator++() {
+            Node *current = m_ptr;
+            T original_key = m_ptr->data.key;
+            if (m_ptr->right != nullptr) {
+                current = m_ptr->right;
+                while (current->left != nullptr) {
+                    current = current->left;
+                }
+
+            } else {
+                do {
+                    current = current->parent;
+                } while (current != nullptr && current->data.key < original_key);
+            }
+            m_ptr = current;
+            return *this;
+        }
+
+        Iterator operator++(int) {
+            Iterator tmp = *this;
+            ++(*this);
+            return tmp;
+        }
+
+        friend bool operator==(const Iterator &a, const Iterator &b) { return a.m_ptr == b.m_ptr; };
+        friend bool operator!=(const Iterator &a, const Iterator &b) { return a.m_ptr != b.m_ptr; };
+        pointer m_ptr;
+    };
+
     Node *pFirst;
     int sz = 0;
 
    public:
+    Iterator begin() {
+        Node *current = pFirst;
+        while (current->left != nullptr) {
+            current = current->left;
+        }
+
+        return Iterator(current);
+    }
+    Iterator end() { return Iterator(nullptr); }
+
     Tree() : pFirst(nullptr) {}
 
     Tree(T key, H value) : pFirst(new Node(Pair{key, value}, nullptr, nullptr, nullptr)) {}
@@ -24,6 +77,7 @@ class Tree : public Map<T, H> {
     Tree(vector<T> elements) {  // ?????????
         sort(elements.begin(), elements.end());
         int plug = 0;
+        pFirst = nullptr;
         while (elements.size() != 0) {
             if (plug % 3 == 0) {
                 Insert(elements[elements.size() / 2], H{});
@@ -40,13 +94,10 @@ class Tree : public Map<T, H> {
     }
     ~Tree() { deleteNode(pFirst); }
     void deleteNode(Node *current) {
-        if (current == nullptr) {
-            return;
-        } else {
-            deleteNode(current->left);
-            deleteNode(current->right);
-            delete current;
-        }
+        if (current == nullptr) return;
+        deleteNode(current->left);
+        deleteNode(current->right);
+        delete current;
     }
     Node *GetFirst() { return pFirst; }
     void Insert(T key, H value) {

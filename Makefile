@@ -40,7 +40,7 @@ map:
 	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp $(test)/*
 	$(CC) $(CFLAGS) $(src)/map.cpp $(src)/tree.cpp $(samples)/main_map.cpp -Iinclude -o map
 
-tree:
+tree: clean
 	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp $(test)/*
 	$(CC) $(CFLAGS) $(src)/map.cpp $(src)/tree.cpp $(samples)/main_tree.cpp -Iinclude -o tree
 
