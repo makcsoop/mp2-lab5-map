@@ -13,6 +13,8 @@ class Map {
     struct Pair {
         T key;
         H value;
+
+        bool operator<(const Pair& other) const { return key < other.key; }
     };
     Map() = default;
     ~Map() = default;
