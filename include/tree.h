@@ -100,7 +100,8 @@ class Tree : public Map<T, H> {
     Node *GetNext(Node *current) {
         if (current != pFirst) {
             if (current->parent->right->data.key == current->data.key) {
-                return pFirst; //(обработка максимального звена) если бросить исключение то эта дура начинает сбрасывать память, как заглушка пока пусть так
+                return pFirst;  //(обработка максимального звена) если бросить исключение то эта дура начинает
+                                // сбрасывать память, как заглушка пока пусть так
             }
         }
         if (current->right != nullptr) {
@@ -125,12 +126,9 @@ class Tree : public Map<T, H> {
 
     void Delete(T key) { key++; }
 
-
     int count() { return sz; };
 
-
     vector<T> keys() { return vector<T>({9}); };
-
 
     H *Find(T key) {
         Node *current = pFirst;
