@@ -269,36 +269,12 @@ class Tree : public Map<T, H> {
         if (root->right) {
             printTreeWithKey(root->right, indent + (isLeft ? "│   " : "    "), false);
         }
-        cout << indent << (isLeft ? "└── " : "┌── ") << root->data.key << ',' << root->data.value << endl;
+        cout << indent << (isLeft ? "└── " : "┌── ") << "(" << root->data.key << ',' << root->data.value
+             << ")" << endl;
         if (root->left) {
             printTreeWithKey(root->left, indent + (isLeft ? "    " : "│   "), true);
         }
     }
-
-    // Node *GetNext(Node *current) {
-    //     if (current == nullptr) return nullptr;
-    //     if (current->right != nullptr) {
-    //         current = current->right;
-    //         while (current->left != nullptr) {
-    //             current = current->left;
-    //         }
-    //         return current;
-    //     } else {
-    //         if (current->parent->data.key > current->data.key) {
-    //             current = current->parent;
-    //             return current;
-    //         } else {
-    //             T remember = current->data.key;
-    //             while (current->parent != nullptr) {
-    //                 do {
-    //                     current = current->parent;
-    //                 } while (current->parent->data.key < remember);
-    //                 return current;
-    //             }
-    //         }
-    //     }
-    //     return nullptr;
-    // }
 
     void Delete(T key) {
         Node *node = FindNode(key);
@@ -371,9 +347,8 @@ class Tree : public Map<T, H> {
         if (tmp == nullptr) {
             this->Insert(key, H{});
             return *this->Find(key);
-        } else {
-            return *tmp;
         }
+        return *tmp;
     }
 
     Node *FindNode(T key) {
@@ -389,5 +364,14 @@ class Tree : public Map<T, H> {
             }
         }
         return nullptr;
+    }
+
+    bool isTrueSort() { return RecSearch(pFirst, nullptr, nullptr); }
+
+    bool RecSearch(Node *node, Node *minNode, Node *maxNode) {
+        if (node == nullptr) return true;
+        if (minNode != nullptr && node->data.key <= minNode->data.key) return false;
+        if (maxNode != nullptr && node->data.key >= maxNode->data.key) return false;
+        return RecSearch(node->left, minNode, node) && RecSearch(node->right, node, maxNode);
     }
 };

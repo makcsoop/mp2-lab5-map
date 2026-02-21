@@ -23,5 +23,6 @@ int main() {
 
     auto it = tree.begin();
     cout << it[2].data.key << endl;
+    tree.printTreeWithKey(tree.GetFirst());
     cout << "SUCCESS";
 }

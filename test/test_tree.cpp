@@ -1,8 +1,10 @@
 #include <gtest/gtest.h>
 #include <tree.h>
-#include "map.h"
+
 #include <string>
 #include <vector>
+
+#include "map.h"
 
 using namespace std;
 
@@ -100,8 +102,10 @@ TEST(BasicTree, DeleteNodes3) {
     table.Insert(75, "seventy five");
     table.Insert(85, "eighty five");
     table.printTree(table.GetFirst());
+    EXPECT_EQ(table.isTrueSort(), true);
     table.Delete(70);
     table.printTree(table.GetFirst());
+    EXPECT_EQ(table.isTrueSort(), true);
     EXPECT_EQ(table.count(), 9);
     EXPECT_EQ(table.FindNode(70), nullptr);
     EXPECT_NE(table.FindNode(50), nullptr);
@@ -123,36 +127,22 @@ TEST_F(IteratorData, RoundTree) {
 }
 
 TEST_F(IteratorData, RoundMinus) {
-    int index = tree.count()-1;
-    auto x=tree.end();
+    int index = tree.count() - 1;
+    auto x = tree.end();
     for (; index >= 0; index--) {
         EXPECT_EQ(x->data.key, el[index]);
         if (index > 0) --x;
     }
 }
 
-// TEST_F(IteratorData, LastPlusPlus) {
-//     auto x=tree.end();
-//     ++x;
-//     EXPECT_EQ(x->data.key, 10 );
-// }
-
 TEST_F(IteratorData, Last) {
-    auto x=tree.end();
-    EXPECT_EQ(x->data.key, 80 );
+    auto x = tree.end();
+    EXPECT_EQ(x->data.key, 80);
 }
 
-// TEST_F(IteratorData, FirstMinusMinus) {
-//     auto x=tree.begin();
-//     --x;
-//     EXPECT_EQ(x->data.key, 10 );
-// }
-
-
-
 TEST_F(IteratorData, First) {
-    auto x=tree.begin();
-    EXPECT_EQ(x->data.key, 10 );
+    auto x = tree.begin();
+    EXPECT_EQ(x->data.key, 10);
 }
 
 TEST_F(IteratorData, ItIndexNode) {
@@ -167,40 +157,35 @@ TEST_F(IteratorData, ItIndexNode) {
     EXPECT_EQ(it->data.key, 65);
 }
 
-
-
 TEST_F(IteratorData, ItIndexNodeReverse) {
     auto it = tree.end();
-    int index=tree.count()-2;
+    int index = tree.count() - 2;
     --it;
-//vector<int> el{10, 20, 30, 40, 50, 60, 65, 70, 80};
+    // vector<int> el{10, 20, 30, 40, 50, 60, 65, 70, 80};
     EXPECT_EQ(it[0].data.key, el[index]);
-    EXPECT_EQ(it[-2].data.key, el[index-2]);
-    EXPECT_EQ((it - 3)->data.key, el[index-3]);
+    EXPECT_EQ(it[-2].data.key, el[index - 2]);
+    EXPECT_EQ((it - 3)->data.key, el[index - 3]);
 
     it -= 2;
-    index-=2;
-    EXPECT_EQ(it->data.key,el[index]);
+    index -= 2;
+    EXPECT_EQ(it->data.key, el[index]);
 
     it--;
     index--;
     EXPECT_EQ(it->data.key, el[index]);
 
     auto old = it--;
-    int oldIndex=index--;
+    int oldIndex = index--;
     EXPECT_EQ(old->data.key, el[oldIndex]);
     EXPECT_EQ(it->data.key, el[index]);
 }
 
-
 TEST_F(BasicTreeData, ConstructorFromVector) {
-    vector<Map<int,char>::Pair> elements = {
-        {50,'A'}, {30,'B'}, {70,'C'}, {20,'D'}, {40,'E'},
-        {60,'F'}, {80,'G'}, {10,'H'}, {90,'I'}
-    };
+    vector<Map<int, char>::Pair> elements = {{50, 'A'}, {30, 'B'}, {70, 'C'}, {20, 'D'}, {40, 'E'},
+                                             {60, 'F'}, {80, 'G'}, {10, 'H'}, {90, 'I'}};
 
-    Tree<int,char> tree(elements);
-    //tree.printTreeWithKey(tree.GetFirst());
+    Tree<int, char> tree(elements);
+    // tree.printTreeWithKey(tree.GetFirst());
 
     auto it = tree.FindNode(30);
     EXPECT_EQ(it->data.key, 30);
@@ -215,7 +200,6 @@ TEST_F(BasicTreeData, ConstructorFromVector) {
     auto end = tree.end();
     EXPECT_EQ(end->data.key, 90);
 }
-
 
 TEST_F(BasicTreeData, OperatorBrackets) {
     Tree<int, string> tree;
@@ -232,4 +216,8 @@ TEST_F(BasicTreeData, OperatorBrackets) {
     EXPECT_EQ(tree[10], "");
     tree[10] = "ten";
     EXPECT_EQ(tree[10], "ten");
+}
+
+TEST_F(BasicTreeData, SortFunc) {
+    EXPECT_EQ(table.isTrueSort(), true);
 }
