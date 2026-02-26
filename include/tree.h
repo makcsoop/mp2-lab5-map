@@ -10,6 +10,7 @@
 
 template <typename T, typename H>
 class Tree : public Map<T, H> {
+   protected:
     using typename Map<T, H>::Pair;
     struct Node {
         Pair data;
@@ -188,7 +189,7 @@ class Tree : public Map<T, H> {
         }
     }
 
-    ~Tree() { deleteNode(pFirst); }
+    virtual ~Tree() { deleteNode(pFirst); }
 
     Node *copyNode(Node *node, Node *parent = nullptr) {
         if (node == nullptr) {
@@ -209,7 +210,7 @@ class Tree : public Map<T, H> {
 
     Node *GetFirst() { return pFirst; }
 
-    void Insert(T key, H value) {
+    virtual void Insert(T key, H value) {
         if (pFirst == nullptr) {
             pFirst = new Node{Pair{key, value}, nullptr, nullptr, nullptr};
             sz++;
@@ -294,7 +295,7 @@ class Tree : public Map<T, H> {
         }
     }
 
-    void Delete(T key) {
+    virtual void Delete(T key) {
         Node *node = FindNode(key);
         if (!node) {
             throw runtime_error("Нет ключа");
@@ -390,7 +391,7 @@ class Tree : public Map<T, H> {
         RecTree(node->right, keys);
     }
 
-    H *Find(T key) {
+    virtual H *Find(T key) {
         Node *current = pFirst;
         while (current != nullptr) {
             if (current->data.key == key) {
@@ -437,4 +438,36 @@ class Tree : public Map<T, H> {
         if (maxNode != nullptr && node->data.key >= maxNode->data.key) return false;
         return RecSearch(node->left, minNode, node) && RecSearch(node->right, node, maxNode);
     }
+};
+
+template <typename T, typename H>
+class AVLTree : protected Tree<T, H> {
+   protected:
+    using typename Tree<T, H>::Pair;
+    using typename Tree<T, H>::Node;
+
+    struct AVLNode : public Node {
+        int advantage;
+
+        AVLNode(const Pair &d, Node *p = nullptr) : Node(d, nullptr, nullptr, p), advantage(0) {}
+    };
+
+    AVLNode *LL(AVLNode *node) {};
+    AVLNode *RR(AVLNode *node) {};
+    AVLNode *RL(AVLNode *node) {};
+    AVLNode *LR(AVLNode *node) {};
+
+    AVLNode *_Insert(AVLNode *root, const Pair &kv) {};
+
+    AVLNode *root;
+
+   public:
+    AVLTree() : root(nullptr) {}
+
+    void Delete(T key) {}
+    void Insert(T key, H value) {}
+
+    int Balance(AVLNode *node) { return 1; }
+
+    ~AVLTree() {}
 };
