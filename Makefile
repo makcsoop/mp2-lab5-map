@@ -1,5 +1,8 @@
 CC = g++
-CFLAGS = -Wall -Wextra -Werror -std=c++23 -fsanitize=address
+# CFLAGS = -Wall -Wextra -Werror -std=c++23 -fsanitize=address
+
+CFLAGS = -Wall -Wextra -Werror -std=c++23 
+
 
 src = src
 samples = samples

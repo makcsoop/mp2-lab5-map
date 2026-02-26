@@ -287,14 +287,3 @@ string format_double(double value) {
     ss << value;
     return ss.str();
 }
-
-void log(string message, int type) {
-    if (type == 0) {
-        cout << Colors::GREEN << "[INFO] " << message << Colors::RESET << "\n";
-
-    } else if (type == 1) {
-        cout << Colors::YELLOW << "[DEBUG] " << message << Colors::RESET << "\n";
-    } else {
-        cout << Colors::RED << "[ERROR] " << message << Colors::RESET << "\n";
-    }
-}

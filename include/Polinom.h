@@ -4,29 +4,17 @@
 #include <vector>
 
 #include "TSimpleList.h"
+#include "log.h"
 
 // g++ test/*.cpp -I./include  -I./gtest  gtest/*.cc  src/*.cpp
 vector<string> split(string str, char delimiter);
 map<string, double> parseMonom(string Monom);
 string format_double(double value);
-void log(string message, int type = 0);
 
 struct Monom {
     double coeef;
     int degrees;
 } typedef Monom;
-
-namespace Colors {
-const string RESET = "\033[0m";
-const string RED = "\033[31m";
-const string GREEN = "\033[32m";
-const string YELLOW = "\033[33m";
-const string BLUE = "\033[34m";
-const string MAGENTA = "\033[35m";
-const string CYAN = "\033[36m";
-const string WHITE = "\033[37m";
-const string BOLD = "\033[1m";
-}  // namespace Colors
 
 class Polinom : public TSimpleList<Monom> {
    private:

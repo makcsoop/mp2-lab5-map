@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "log.h"
 #include "map.h"
 
 using namespace std;
@@ -106,7 +107,7 @@ TEST(BasicTree, DeleteNodes3) {
     table.Delete(70);
     table.printTree(table.GetFirst());
     EXPECT_EQ(table.isTrueSort(), true);
-    EXPECT_EQ(table.count(), 9);
+    EXPECT_EQ(table.count(), 8);
     EXPECT_EQ(table.FindNode(70), nullptr);
     EXPECT_NE(table.FindNode(50), nullptr);
     EXPECT_NE(table.FindNode(30), nullptr);
@@ -218,6 +219,400 @@ TEST_F(BasicTreeData, OperatorBrackets) {
     EXPECT_EQ(tree[10], "ten");
 }
 
-TEST_F(BasicTreeData, SortFunc) {
-    EXPECT_EQ(table.isTrueSort(), true);
+TEST_F(BasicTreeData, SortFunc) { EXPECT_EQ(table.isTrueSort(), true); }
+
+TEST(BasicTree, ConstructorFromPairVector) {
+    vector<Map<int, string>::Pair> elements = {
+        {5, "five"}, {3, "three"}, {7, "seven"}, {2, "two"}, {4, "four"}};
+    Tree<int, string> tree(elements);
+
+    EXPECT_EQ(tree.count(), 5);
+    EXPECT_EQ(*tree.Find(5), "five");
+    EXPECT_EQ(*tree.Find(3), "three");
+    EXPECT_EQ(*tree.Find(7), "seven");
+    EXPECT_EQ(*tree.Find(2), "two");
+    EXPECT_EQ(*tree.Find(4), "four");
+    EXPECT_TRUE(tree.isTrueSort());
+}
+
+TEST(BasicTree, ConstructorFromKeyVector) {
+    vector<int> keys = {50, 30, 70, 20, 40, 60, 80};
+    Tree<int, string> tree(keys);
+
+    EXPECT_EQ(tree.count(), 7);
+    EXPECT_EQ(tree.keys(), vector<int>({20, 30, 40, 50, 60, 70, 80}));
+    EXPECT_TRUE(tree.isTrueSort());
+}
+
+TEST(BasicTree, ConstructorFromEmptyVector) {
+    vector<Map<int, string>::Pair> empty_pairs;
+    Tree<int, string> tree1(empty_pairs);
+    EXPECT_EQ(tree1.count(), 0);
+    EXPECT_EQ(tree1.GetFirst(), nullptr);
+
+    vector<int> empty_keys;
+    Tree<int, string> tree2(empty_keys);
+    EXPECT_EQ(tree2.count(), 0);
+    EXPECT_EQ(tree2.GetFirst(), nullptr);
+}
+
+TEST(BasicTree, CopyConstructor) {
+    Tree<int, string> original;
+    original.Insert(5, "five");
+    original.Insert(3, "three");
+    original.Insert(7, "seven");
+
+    Tree<int, string> copy(original);  // Если есть конструктор копирования
+
+    EXPECT_EQ(copy.count(), 3);
+    EXPECT_EQ(*copy.Find(5), "five");
+    EXPECT_EQ(*copy.Find(3), "three");
+    EXPECT_EQ(*copy.Find(7), "seven");
+}
+
+TEST(BasicTree, MoveConstructor) {
+    Tree<int, string> original;
+    original.Insert(5, "five");
+    original.Insert(3, "three");
+
+    Tree<int, string> moved(std::move(original));
+
+    EXPECT_EQ(moved.count(), 2);
+    EXPECT_EQ(*moved.Find(5), "five");
+    EXPECT_EQ(*moved.Find(3), "three");
+}
+
+// Тесты метода Insert
+TEST_F(BasicTreeData, InsertDuplicateKey) {
+    EXPECT_THROW(table.Insert(1, "duplicate"), invalid_argument);
+    EXPECT_EQ(table.count(), 3);  // Размер не должен измениться
+}
+
+TEST_F(BasicTreeData, InsertMultipleValues) {
+    table.Insert(4, "four");
+    table.Insert(5, "five");
+    table.Insert(0, "zero");
+
+    EXPECT_EQ(table.count(), 6);
+    EXPECT_EQ(table.keys(), vector<int>({0, 1, 2, 3, 4, 5}));
+    EXPECT_EQ(*table.Find(4), "four");
+    EXPECT_EQ(*table.Find(5), "five");
+    EXPECT_EQ(*table.Find(0), "zero");
+}
+
+TEST_F(BasicTreeData, InsertLargeNumberOfElements) {
+    for (int i = 100; i < 200; ++i) {
+        table.Insert(i, "value" + to_string(i));
+    }
+
+    EXPECT_EQ(table.count(), 103);  // 3 исходных + 100 новых
+    EXPECT_EQ(*table.Find(150), "value150");
+}
+
+// Тесты метода Find
+TEST_F(BasicTreeData, FindNonExistentKey) {
+    EXPECT_EQ(table.Find(100), nullptr);
+    EXPECT_EQ(table.Find(-5), nullptr);
+}
+
+TEST_F(BasicTreeData, FindAfterInsert) {
+    table.Insert(100, "hundred");
+    auto* value = table.Find(100);
+    ASSERT_NE(value, nullptr);
+    EXPECT_EQ(*value, "hundred");
+}
+
+TEST_F(BasicTreeData, FindAfterDelete) {
+    table.Insert(100, "hundred");
+    table.Delete(100);
+    EXPECT_EQ(table.Find(100), nullptr);
+}
+
+// Тесты метода FindNode
+TEST_F(BasicTreeData, FindNodeExistent) {
+    auto* node = table.FindNode(2);
+    ASSERT_NE(node, nullptr);
+    EXPECT_EQ(node->data.key, 2);
+    EXPECT_EQ(node->data.value, "one");
+}
+
+TEST_F(BasicTreeData, FindNodeNonExistent) { EXPECT_EQ(table.FindNode(100), nullptr); }
+
+TEST_F(BasicTreeData, FindNodeCheckParent) {
+    auto* node = table.FindNode(2);
+    ASSERT_NE(node->parent, nullptr);
+    EXPECT_EQ(node->parent->data.key, 1);  // Предполагая структуру дерева
+}
+
+// Тесты метода Delete
+TEST_F(BasicTreeData, DeleteLeafNode) {
+    table.Insert(4, "four");
+    EXPECT_EQ(table.count(), 4);
+
+    table.Delete(4);
+    EXPECT_EQ(table.count(), 3);
+    EXPECT_EQ(table.Find(4), nullptr);
+    EXPECT_TRUE(table.isTrueSort());
+}
+
+TEST_F(BasicTreeData, DeleteNodeWithOneChild) {
+    Tree<int, string> tree;
+    tree.Insert(50, "fifty");
+    tree.Insert(30, "thirty");
+    tree.Insert(70, "seventy");
+    tree.Insert(20, "twenty");
+    // Узел 30 имеет только левого потомка 20
+
+    EXPECT_TRUE(tree.isTrueSort());
+    tree.Delete(30);
+
+    EXPECT_EQ(tree.count(), 3);
+    EXPECT_EQ(tree.Find(30), nullptr);
+    EXPECT_NE(tree.Find(20), nullptr);
+    EXPECT_TRUE(tree.isTrueSort());
+}
+
+TEST_F(BasicTreeData, DeleteNodeWithTwoChildren) {
+    Tree<int, string> tree;
+    tree.Insert(50, "fifty");
+    tree.Insert(30, "thirty");
+    tree.Insert(70, "seventy");
+    tree.Insert(20, "twenty");
+    tree.Insert(40, "forty");
+    // Узел 50 имеет двух потомков
+
+    EXPECT_TRUE(tree.isTrueSort());
+    tree.Delete(50);
+
+    EXPECT_EQ(tree.count(), 4);
+    EXPECT_EQ(tree.Find(50), nullptr);
+    EXPECT_NE(tree.Find(30), nullptr);
+    EXPECT_NE(tree.Find(70), nullptr);
+    EXPECT_TRUE(tree.isTrueSort());
+}
+
+TEST_F(BasicTreeData, DeleteRootNode) {
+    Tree<int, string> tree;
+    tree.Insert(50, "fifty");
+    tree.Insert(30, "thirty");
+    tree.Insert(70, "seventy");
+
+    tree.Delete(50);
+
+    EXPECT_EQ(tree.count(), 2);
+    EXPECT_EQ(tree.Find(50), nullptr);
+    EXPECT_TRUE(tree.isTrueSort());
+
+    // Проверяем, что новый корень корректен
+    auto* root = tree.GetFirst();
+    ASSERT_NE(root, nullptr);
+    EXPECT_TRUE(root->data.key == 30 || root->data.key == 70);
+}
+
+TEST_F(BasicTreeData, DeleteNonExistentKey) {
+    EXPECT_THROW(table.Delete(100), runtime_error);  // или другой тип исключения
+    EXPECT_EQ(table.count(), 3);
+}
+
+// Тесты метода count
+TEST_F(BasicTreeData, CountAfterOperations) {
+    EXPECT_EQ(table.count(), 3);
+
+    table.Insert(4, "four");
+    EXPECT_EQ(table.count(), 4);
+    table.Delete(2);
+    EXPECT_EQ(table.count(), 3);
+    table.Delete(1);
+    table.Delete(3);
+    table.Delete(4);
+    EXPECT_EQ(table.count(), 0);
+}
+
+// Тесты метода keys
+TEST_F(BasicTreeData, KeysEmptyTree) {
+    Tree<int, string> empty_tree;
+    EXPECT_EQ(empty_tree.keys(), vector<int>());
+}
+
+TEST_F(BasicTreeData, KeysAfterDelete) {
+    table.Insert(5, "five");
+    table.Insert(0, "zero");
+    table.printTree(table.GetFirst());
+    table.Delete(2);
+    table.printTree(table.GetFirst());
+
+    EXPECT_EQ(table.keys(), vector<int>({0, 1, 3, 5}));
+}
+
+// Тесты метода isTrueSort
+TEST_F(BasicTreeData, SortValidationOnValidTree) {
+    EXPECT_TRUE(table.isTrueSort());
+
+    table.Insert(10, "ten");
+    table.Insert(6, "six");
+    EXPECT_TRUE(table.isTrueSort());
+}
+
+// Тесты оператора []
+TEST_F(BasicTreeData, BracketOperatorRead) {
+    Tree<int, string> tree;
+    tree.Insert(1, "one");
+
+    EXPECT_EQ(tree[1], "one");
+}
+
+TEST_F(BasicTreeData, BracketOperatorWrite) {
+    Tree<int, string> tree;
+    tree[1] = "one";
+
+    EXPECT_EQ(*tree.Find(1), "one");
+    EXPECT_EQ(tree.count(), 1);
+}
+
+TEST_F(BasicTreeData, BracketOperatorChaining) {
+    Tree<int, string> tree;
+    tree[5] = "five";
+    tree[5] = "FIVE";
+    tree[3] = tree[5];  // Присваивание значения по ключу
+
+    EXPECT_EQ(tree[5], "FIVE");
+    EXPECT_EQ(tree[3], "FIVE");
+}
+
+// Тесты методов GetFirst и printTree (визуальная проверка)
+TEST_F(BasicTreeData, GetFirstOnEmptyTree) {
+    Tree<int, string> empty_tree;
+    EXPECT_EQ(empty_tree.GetFirst(), nullptr);
+}
+
+TEST_F(BasicTreeData, GetFirstAfterOperations) {
+    auto* root = table.GetFirst();
+    ASSERT_NE(root, nullptr);
+    EXPECT_EQ(root->data.key, 1);  // Предполагая, что 1 - корень
+
+    table.Insert(0, "zero");
+    root = table.GetFirst();
+    EXPECT_EQ(root->data.key, 1);  // Корень не должен измениться
+
+    table.Delete(1);
+    root = table.GetFirst();
+    EXPECT_NE(root->data.key, 1);  // Корень должен измениться
+}
+
+TEST_F(BasicTreeData, PrintTreeOutput) {
+    // Визуальная проверка - выводим дерево
+    testing::internal::CaptureStdout();
+    table.printTree(table.GetFirst());
+    string output = testing::internal::GetCapturedStdout();
+    EXPECT_FALSE(output.empty());
+}
+
+// Тесты для работы с разными типами данных
+TEST(BasicTree, DifferentTypes) {
+    // Tree с ключами string
+    Tree<string, int> string_tree;
+    string_tree.Insert("apple", 5);
+    string_tree.Insert("banana", 3);
+    string_tree.Insert("cherry", 7);
+
+    EXPECT_EQ(string_tree.count(), 3);
+    EXPECT_EQ(*string_tree.Find("banana"), 3);
+    EXPECT_TRUE(string_tree.isTrueSort());
+
+    // Tree с ключами double
+    Tree<double, string> double_tree;
+    double_tree.Insert(3.14, "pi");
+    double_tree.Insert(2.71, "e");
+    double_tree.Insert(1.61, "phi");
+
+    EXPECT_EQ(double_tree.count(), 3);
+    EXPECT_EQ(*double_tree.Find(3.14), "pi");
+}
+
+// Тесты граничных случаев
+TEST(BasicTree, EdgeCases) {
+    Tree<int, string> tree;
+
+    // Минимальные и максимальные значения
+    tree.Insert(INT_MIN, "min");
+    tree.Insert(INT_MAX, "max");
+
+    EXPECT_EQ(*tree.Find(INT_MIN), "min");
+    EXPECT_EQ(*tree.Find(INT_MAX), "max");
+    EXPECT_TRUE(tree.isTrueSort());
+}
+
+// Тесты итераторов - расширение существующих
+TEST_F(IteratorData, IteratorBeginEndEquality) {
+    auto begin = tree.begin();
+    auto end = tree.end();
+    EXPECT_NE(begin, end);
+
+    Tree<int, string> empty_tree;
+    // Для пустого дерева begin() должен равняться end()
+    // Но нужно убедиться, что это реализовано
+}
+
+TEST_F(IteratorData, IteratorTraversal) {
+    vector<int> traversed_keys;
+    for (auto it = tree.begin(); it != tree.end(); ++it) {
+        traversed_keys.push_back(it->data.key);
+    }
+    traversed_keys.push_back(tree.end()->data.key);  // Добавляем последний элемент
+
+    EXPECT_EQ(traversed_keys, el);
+}
+
+// Тесты на корректность структуры дерева после операций
+TEST_F(BasicTreeData, TreeStructureAfterMultipleOperations) {
+    Tree<int, string> tree;
+    vector<int> keys = {50, 30, 70, 20, 40, 60, 80, 10, 90};
+
+    for (int k : keys) {
+        tree.Insert(k, "value");
+    }
+
+    EXPECT_TRUE(tree.isTrueSort());
+    tree.printTree(tree.GetFirst());
+    // Удаляем узлы в разном порядке
+    vector<int> delete_order = {20, 70, 50, 90};
+
+    for (int k : delete_order) {
+        tree.printTree(tree.GetFirst());
+        tree.Delete(k);
+
+        EXPECT_TRUE(tree.isTrueSort()) << "Tree became unsorted after deleting " << k;
+    }
+    tree.printTree(tree.GetFirst());
+    // Проверяем оставшиеся ключи
+    vector<int> remaining_keys = tree.keys();
+    vector<int> expected_keys = {10, 30, 40, 60, 80};
+    EXPECT_EQ(remaining_keys, expected_keys);
+}
+
+// Тест на работу с пользовательским типом данных
+struct CustomType {
+    int a;
+    string b;
+
+    bool operator<(const CustomType& other) const { return a < other.a; }
+    bool operator>(const CustomType& other) const { return a > other.a; }
+    bool operator<=(const CustomType& other) const { return a <= other.a; }
+    bool operator>=(const CustomType& other) const { return a >= other.a; }
+    bool operator==(const CustomType& other) const { return a == other.a; }
+};
+
+TEST(BasicTree, CustomKeyType) {
+    Tree<CustomType, string> tree;
+    CustomType key1{1, "one"};
+    CustomType key2{2, "two"};
+    CustomType key3{3, "three"};
+
+    tree.Insert(key1, "value1");
+    tree.Insert(key2, "value2");
+    tree.Insert(key3, "value3");
+
+    EXPECT_EQ(tree.count(), 3);
+    EXPECT_EQ(*tree.Find(key2), "value2");
+    EXPECT_TRUE(tree.isTrueSort());
 }

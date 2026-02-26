@@ -1,9 +1,12 @@
-#include <map.h>
-
+#pragma once
 #include <algorithm>
 #include <cstddef>   // For std::ptrdiff_t
 #include <iterator>  // For std::forward_iterator_tag
+#include <string>
 #include <vector>
+
+#include "log.h"
+#include "map.h"
 
 template <typename T, typename H>
 class Tree : public Map<T, H> {
@@ -142,6 +145,11 @@ class Tree : public Map<T, H> {
 
     Tree(T key, H value) : pFirst(new Node(Pair{key, value}, nullptr, nullptr, nullptr)) {}
 
+    Tree(const Tree<T, H> &root) {
+        pFirst = copyNode(root.pFirst);
+        sz = root.sz;
+    }
+
     Tree(vector<Pair> elements) {
         sort(elements.begin(), elements.end());
         int plug = 0;
@@ -181,6 +189,16 @@ class Tree : public Map<T, H> {
     }
 
     ~Tree() { deleteNode(pFirst); }
+
+    Node *copyNode(Node *node, Node *parent = nullptr) {
+        if (node == nullptr) {
+            return nullptr;
+        }
+        Node *new_node = new Node{node->data, parent, nullptr, nullptr};
+        new_node->left = copyNode(node->left, new_node);
+        new_node->right = copyNode(node->right, new_node);
+        return new_node;
+    }
 
     void deleteNode(Node *current) {
         if (current == nullptr) return;
@@ -278,37 +296,82 @@ class Tree : public Map<T, H> {
 
     void Delete(T key) {
         Node *node = FindNode(key);
+        if (!node) {
+            throw runtime_error("Нет ключа");
+        }
         if (node->left == nullptr && node->right == nullptr) {  // удаление листа
+            if (node == pFirst) {
+                delete pFirst;
+                pFirst = nullptr;
+                sz = 0;
+                return;
+            }
             Node *parent = node->parent;
             if (parent->left == node) {
                 parent->left = nullptr;
             } else {
                 parent->right = nullptr;
             }
+            delete node;
+            sz--;
 
         } else if (((node->left == nullptr) + (node->right == nullptr)) == 1) {  // один потомок
-            Node *parent = node->parent;
-            Node *next = (node->left == nullptr) ? node->right : node->left;
-            if (parent->left != nullptr) {
-                parent->left = next;
-            } else {
-                parent->right = next;
+            Node *child = (node->left != nullptr) ? node->left : node->right;
+            if (node == pFirst) {
+                child->parent = nullptr;
+                delete pFirst;
+                pFirst = child;
+                sz--;
+                return;
             }
-        } else {  // 2 потомка
             Node *parent = node->parent;
-            Node *right = node->right;
-            Node *left = node->left;
             if (parent->left == node) {
-                parent->left = left;
-                InsertNode(right);
-
+                parent->left = child;
             } else {
-                parent->right = right;
-                InsertNode(left);
+                parent->right = child;
+            }
+            child->parent = parent;
+            delete node;
+            sz--;
+        } else {  // 2 потомка
+            if (node == pFirst) {
+                Node *minNode = node->right;
+                while (minNode->left != nullptr) {
+                    minNode = minNode->left;
+                }
+                T minKey = minNode->data.key;
+                H minValue = minNode->data.value;
+                Delete(minKey);
+                pFirst = new Node{Pair{minKey, minValue}, node->left, node->right, nullptr};
+                if (pFirst->left) {
+                    pFirst->left->parent = pFirst;
+                }
+                if (pFirst->right) {
+                    pFirst->right->parent = pFirst;
+                }
+                delete node;
+            } else {
+                Node *minNode = node->right;
+                while (minNode->left != nullptr) {
+                    minNode = minNode->left;
+                }
+                node->data.key = minNode->data.key;
+                node->data.value = minNode->data.value;
+                Node *minParent = minNode->parent;
+                if (minParent->left == minNode) {
+                    minParent->left = minNode->right;
+                } else {
+                    minParent->right = minNode->right;
+                }
+
+                if (minNode->right) {
+                    minNode->right->parent = minParent;
+                }
+
+                delete minNode;
+                sz--;
             }
         }
-        delete node;
-        sz--;
     }
 
     int count() { return sz; };
