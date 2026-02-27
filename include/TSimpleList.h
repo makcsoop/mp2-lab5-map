@@ -17,7 +17,7 @@ class TSimpleList {
     int sz;
 
    public:
-    TSimpleList() : pFirst(nullptr), sz(0){};
+    TSimpleList() : pFirst(nullptr), sz(0) {};
     TSimpleList(const vector<T>& v);
     TSimpleList(const TSimpleList& list);
     TSimpleList(TSimpleList&& list) noexcept;

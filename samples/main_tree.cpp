@@ -25,4 +25,6 @@ int main() {
     cout << it[2].data.key << endl;
     tree.printTreeWithKey(tree.GetFirst());
     cout << "SUCCESS";
+
+    RedBlackTree<int, string> rdtree;
 }

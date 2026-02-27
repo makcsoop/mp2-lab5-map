@@ -8,6 +8,108 @@
 #include "log.h"
 #include "map.h"
 
+template <typename TypeNode>
+struct TreeIterator {
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = TypeNode;
+    using pointer = TypeNode *;    // or also value_type*
+    using reference = TypeNode &;  // or also value_type&
+
+    TreeIterator(pointer ptr) : m_ptr(ptr) {}
+    reference operator*() const { return *m_ptr; }
+    pointer operator->() { return m_ptr; }
+
+    TreeIterator &operator++() {
+        TypeNode *current = m_ptr;
+        auto original_key = m_ptr->data.key;
+        if (m_ptr->right != nullptr) {
+            current = static_cast<TypeNode *>(m_ptr->right);
+            while (current->left != nullptr) {
+                current = static_cast<TypeNode *>(current->left);
+            }
+
+        } else {
+            do {
+                current = static_cast<TypeNode *>(current->parent);
+            } while (current != nullptr && current->data.key < original_key);
+        }
+        m_ptr = current;
+        return *this;
+    }
+
+    TreeIterator operator++(int) {
+        TreeIterator tmp = *this;
+        ++(*this);
+        return tmp;
+    }
+
+    TreeIterator operator+(difference_type n) const {
+        TreeIterator tmp = *this;
+        return tmp += n;
+    }
+
+    TreeIterator &operator+=(difference_type n) {
+        while (n > 0) {
+            ++(*this);
+            --n;
+        }
+        return *this;
+    }
+
+    TreeIterator &operator--() {
+        TypeNode *current = m_ptr;
+        auto original_key = m_ptr->data.key;
+        if (m_ptr->left != nullptr) {
+            current = m_ptr->left;
+            while (current->right != nullptr) {
+                current = current->right;
+            }
+
+        } else {
+            do {
+                current = current->parent;
+            } while (current != nullptr && current->data.key > original_key);
+        }
+        m_ptr = current;
+        return *this;
+    }
+
+    TreeIterator operator--(int) {
+        TreeIterator tmp = *this;
+        --(*this);
+        return tmp;
+    }
+
+    TreeIterator operator-(difference_type n) const {
+        TreeIterator tmp = *this;
+        return tmp -= n;
+    }
+
+    TreeIterator &operator-=(difference_type n) {
+        while (n > 0) {
+            --(*this);
+            --n;
+        }
+        return *this;
+    }
+
+    reference operator[](difference_type n) {
+        TreeIterator tmp = *this;
+        if (n < 0) {
+            n *= (-1);
+            tmp -= n;
+        } else {
+            tmp += n;
+        }
+        return *tmp;
+    }
+
+    friend bool operator==(const TreeIterator &a, const TreeIterator &b) { return a.m_ptr == b.m_ptr; };
+    friend bool operator!=(const TreeIterator &a, const TreeIterator &b) { return a.m_ptr != b.m_ptr; };
+    pointer m_ptr;
+};
+
 template <typename T, typename H>
 class Tree : public Map<T, H> {
    protected:
@@ -20,111 +122,11 @@ class Tree : public Map<T, H> {
             : data(d), left(l), right(r), parent(p) {}
     };
 
-    struct Iterator {
-        using iterator_category = std::forward_iterator_tag;
-        using difference_type = std::ptrdiff_t;
-        using value_type = Node;
-        using pointer = Node *;    // or also value_type*
-        using reference = Node &;  // or also value_type&
-
-        Iterator(pointer ptr) : m_ptr(ptr) {}
-        reference operator*() const { return *m_ptr; }
-        pointer operator->() { return m_ptr; }
-
-        Iterator &operator++() {
-            Node *current = m_ptr;
-            T original_key = m_ptr->data.key;
-            if (m_ptr->right != nullptr) {
-                current = m_ptr->right;
-                while (current->left != nullptr) {
-                    current = current->left;
-                }
-
-            } else {
-                do {
-                    current = current->parent;
-                } while (current != nullptr && current->data.key < original_key);
-            }
-            m_ptr = current;
-            return *this;
-        }
-
-        Iterator operator++(int) {
-            Iterator tmp = *this;
-            ++(*this);
-            return tmp;
-        }
-
-        Iterator operator+(difference_type n) const {
-            Iterator tmp = *this;
-            return tmp += n;
-        }
-
-        Iterator &operator+=(difference_type n) {
-            while (n > 0) {
-                ++(*this);
-                --n;
-            }
-            return *this;
-        }
-
-        Iterator &operator--() {
-            Node *current = m_ptr;
-            T original_key = m_ptr->data.key;
-            if (m_ptr->left != nullptr) {
-                current = m_ptr->left;
-                while (current->right != nullptr) {
-                    current = current->right;
-                }
-
-            } else {
-                do {
-                    current = current->parent;
-                } while (current != nullptr && current->data.key > original_key);
-            }
-            m_ptr = current;
-            return *this;
-        }
-
-        Iterator operator--(int) {
-            Iterator tmp = *this;
-            --(*this);
-            return tmp;
-        }
-
-        Iterator operator-(difference_type n) const {
-            Iterator tmp = *this;
-            return tmp -= n;
-        }
-
-        Iterator &operator-=(difference_type n) {
-            while (n > 0) {
-                --(*this);
-                --n;
-            }
-            return *this;
-        }
-
-        reference operator[](difference_type n) {
-            Iterator tmp = *this;
-            if (n < 0) {
-                n *= (-1);
-                tmp -= n;
-            } else {
-                tmp += n;
-            }
-            return *tmp;
-        }
-
-        friend bool operator==(const Iterator &a, const Iterator &b) { return a.m_ptr == b.m_ptr; };
-        friend bool operator!=(const Iterator &a, const Iterator &b) { return a.m_ptr != b.m_ptr; };
-        pointer m_ptr;
-    };
-
     Node *pFirst;
     int sz = 0;
 
    public:
+    using Iterator = TreeIterator<Node>;
     Iterator begin() {
         Node *current = pFirst;
         while (current->left != nullptr) {
@@ -470,4 +472,46 @@ class AVLTree : protected Tree<T, H> {
     int Balance(AVLNode *node) { return 1; }
 
     ~AVLTree() {}
+};
+
+template <typename T, typename H>
+class RedBlackTree : protected Tree<T, H> {
+   protected:
+    using typename Tree<T, H>::Pair;
+    using typename Tree<T, H>::Node;
+
+    struct RedBlackNode : public Node {
+        char color;
+
+        RedBlackNode(const Pair &d, Node *p = nullptr) : Node(d, nullptr, nullptr, p), color('b') {}
+    };
+
+    RedBlackNode *pFirst;
+    using Iterator = TreeIterator<RedBlackNode>;
+
+   public:
+    Iterator begin() {
+        RedBlackNode *current = pFirst;
+        while (current->left != nullptr) {
+            current = static_cast<RedBlackNode *>(current->left);
+        }
+
+        return Iterator(current);
+    }
+    Iterator end() {
+        RedBlackNode *current = pFirst;
+        while (current->right != nullptr) {
+            current = static_cast<RedBlackNode *>(current->right);
+        }
+
+        return Iterator(current);
+    }
+    RedBlackTree() : pFirst(nullptr) {}
+
+    // void Delete(T key) {}
+    // void Insert(T key, H value) {}
+
+    // int Balance(AVLNode *node) { return 1; }
+
+    ~RedBlackTree() {}
 };
