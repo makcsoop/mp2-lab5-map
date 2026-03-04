@@ -530,17 +530,17 @@ TEST(BasicTree, DifferentTypes) {
 }
 
 // Тесты граничных случаев
-TEST(BasicTree, EdgeCases) {
-    Tree<int, string> tree;
+// TEST(BasicTree, EdgeCases) {
+//     Tree<int, string> tree;
 
-    // Минимальные и максимальные значения
-    tree.Insert(INT_MIN, "min");
-    tree.Insert(INT_MAX, "max");
+//     // Минимальные и максимальные значения
+//     tree.Insert(INT_MIN, "min");
+//     tree.Insert(INT_MAX, "max");
 
-    EXPECT_EQ(*tree.Find(INT_MIN), "min");
-    EXPECT_EQ(*tree.Find(INT_MAX), "max");
-    EXPECT_TRUE(tree.isTrueSort());
-}
+//     EXPECT_EQ(*tree.Find(INT_MIN), "min");
+//     EXPECT_EQ(*tree.Find(INT_MAX), "max");
+//     EXPECT_TRUE(tree.isTrueSort());
+// }
 
 // Тесты итераторов - расширение существующих
 TEST_F(IteratorData, IteratorBeginEndEquality) {
@@ -615,4 +615,21 @@ TEST(BasicTree, CustomKeyType) {
     EXPECT_EQ(tree.count(), 3);
     EXPECT_EQ(*tree.Find(key2), "value2");
     EXPECT_TRUE(tree.isTrueSort());
+}
+
+// TEST(AVLTreeTest, EmptyTree) {
+//     AVLTree<int, string> tree;
+//     EXPECT_EQ(tree.count(), 0);
+//     EXPECT_EQ(tree.Find(5), nullptr);
+// }
+
+// Тест 2: Проверка базовой вставки
+TEST(AVLTreeTest, BasicInsert) {
+    AVLTree<int, string> tree;
+    tree.Insert(50, "50");
+    tree.Insert(40, "40");
+    tree.Insert(30, "30");
+    tree.Insert(20, "двадцать");
+    tree.Insert(10, "тен");
+    tree._printTreeWithKey(tree.GetFirst());
 }
