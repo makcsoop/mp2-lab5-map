@@ -482,7 +482,136 @@ class AVLTree : protected Tree<T, H> {
 
     AVLTree() : _pFirst(nullptr), _sz(0) {}
 
-    void Delete(T key) { key++; }
+    H *Find(T key) {
+        AVLNode *current = _pFirst;
+        while (current != nullptr) {
+            if (current->data.key == key) {
+                return &current->data.value;
+            }
+            if (current->data.key > key) {
+                current = static_cast<AVLNode *>(current->left);
+            } else {
+                current = static_cast<AVLNode *>(current->right);
+            }
+        }
+        return nullptr;
+    }
+
+    AVLNode *FindNode(T key) {
+        AVLNode *current = _pFirst;
+        while (current != nullptr) {
+            if (current->data.key == key) {
+                return current;
+            }
+            if (current->data.key > key) {
+                current = static_cast<AVLNode *>(current->left);
+            } else {
+                current = static_cast<AVLNode *>(current->right);
+            }
+        }
+        return nullptr;
+    }
+
+    void Delete(T key) {
+        if (this->Find(key) == nullptr) {
+            return;
+        } else {
+            if (this->FindNode(key)->right == nullptr) {
+                if (this->FindNode(key)->left == nullptr) {
+                    if (this->FindNode(key) == _pFirst) {
+                        delete _pFirst;
+                        _sz = 0;
+                        _pFirst = nullptr;
+                        return;
+                    }
+                    AVLNode *current = static_cast<AVLNode *>(this->FindNode(key)->parent);
+                    delete this->FindNode(key);
+                    _sz--;
+
+                    while (current != nullptr) {
+                        Rotate(current);
+                        current = static_cast<AVLNode *>(current->parent);
+                    }
+
+                    return;
+
+                } else {
+                    if (this->FindNode(key)->left->left == nullptr) {
+                        swap_data(this->FindNode(key), static_cast<AVLNode *>(this->FindNode(key)->left));
+
+                        bool isRoot = (this->FindNode(key) == _pFirst);
+
+                        delete this->FindNode(key);
+                        _sz--;
+
+                        AVLNode *current = static_cast<AVLNode *>(this->FindNode(key)->parent);
+
+                        if (isRoot == true) {
+                            _pFirst = this->FindNode(key);
+                        }
+
+                        while (current != nullptr) {
+                            Rotate(current);
+                            current = static_cast<AVLNode *>(current->parent);
+                        }
+                        return;
+                    } else {
+                        AVLNode *node = this->FindNode(key);
+                        AVLNode *node_l_c = static_cast<AVLNode *>(this->FindNode(key)->left);
+                        AVLNode *node_l_gc = static_cast<AVLNode *>(this->FindNode(key)->left->left);
+
+                        swap_data(node, node_l_c);
+
+                        node->right = static_cast<AVLNode *>(node_l_c->right);
+                        node_l_c->right->parent = node;
+
+                        node_l_gc->parent = node;
+                        node->left = node_l_gc;
+
+                        delete node_l_c;
+                        _sz--;
+
+                        if (node == _pFirst) {
+                            _pFirst = node;
+                        }
+
+                        while (node != nullptr) {
+                            Rotate(node);
+                            node = static_cast<AVLNode *>(node->parent);
+                        }
+                        return;
+                    }
+                }
+            } else {
+                AVLNode *finded = this->FindNode(key);
+                AVLNode *min = static_cast<AVLNode *>(this->FindNode(key)->right);
+                while (min->left == nullptr) {
+                    min = static_cast<AVLNode *>(min->right);
+                }
+                while (min->left != nullptr) {
+                    min = static_cast<AVLNode *>(min->left);
+                }
+
+                swap_data(finded, min);
+
+                AVLNode *current = static_cast<AVLNode *>(min->parent);
+
+                if (finded == _pFirst) {
+                    _pFirst = finded;
+                }
+
+                delete min;
+                _sz--;
+
+                while (current != nullptr) {
+                    Rotate(current);
+                    current = static_cast<AVLNode *>(current->parent);
+                }
+
+                return;
+            }
+        }
+    }
     void Insert(T key, H value) override {
         _pFirst = _Insert(_pFirst, key, value, nullptr);
         _sz++;
@@ -500,13 +629,40 @@ class AVLTree : protected Tree<T, H> {
         return balance;
     }
 
+    void Rotate(AVLNode *node) {
+        if (Balance(node) == 2) {
+            AVLNode *tmp = static_cast<AVLNode *>(node->right);
+            if (tmp != nullptr) {
+                if (Balance(tmp) == 1) {
+                    RR(node);
+                } else if (Balance(tmp) == -1) {
+                    RL(node);
+                }
+
+                return;
+            }
+        } else if (Balance(node) == -2) {
+            AVLNode *tmp = static_cast<AVLNode *>(node->left);
+            if (tmp != nullptr) {
+                if (Balance(tmp) == 1) {
+                    LR(node);
+                } else if (Balance(tmp) == -1) {
+                    LL(node);
+                }
+                return;
+            }
+        }
+
+        return;
+    }
+
     void _printTreeWithKey(AVLNode *root, std::string indent = "", bool isLeft = true) {
         if (root == nullptr) return;
         if (static_cast<AVLNode *>(root->right)) {
             _printTreeWithKey(static_cast<AVLNode *>(root->right), indent + (isLeft ? "│   " : "    "),
                               false);
         }
-        cout << indent << (isLeft ? "└── " : "┌── ") << "(" << root->data.key << ',' << root->data.value
+        cout << indent << (isLeft ? "└── " : "┌── ") << "(" << root->data.key /*<< ',' << root->data.value*/
              << ")" << endl;
         if (static_cast<AVLNode *>(root->left)) {
             _printTreeWithKey(static_cast<AVLNode *>(root->left), indent + (isLeft ? "    " : "│   "), true);
@@ -530,8 +686,19 @@ class AVLTree : protected Tree<T, H> {
         node->right = tmp;
     };
 
-    void swap_data_and_childs(AVLNode* first,AVLNode* second){
+    void swap_data_and_childs(AVLNode *first, AVLNode *second) {
+        Pair tmpd = first->data;
+        AVLNode *ch1 = static_cast<AVLNode *>(first->left);
+        AVLNode *ch2 = static_cast<AVLNode *>(first->right);
+        first->data = second->data;
+        first->right = static_cast<AVLNode *>(second->right);
+        first->left = static_cast<AVLNode *>(second->left);
+        second->data = tmpd;
+        second->right = ch2;
+        second->left = ch1;
 
+        // delete[] ch1;
+        // delete[] ch2;
     };
 
     AVLNode *LL(AVLNode *node) {
@@ -539,13 +706,13 @@ class AVLTree : protected Tree<T, H> {
         swap_pointer(node);
         swap_pointer(static_cast<AVLNode *>(node->right));
 
-        AVLNode*tmp=static_cast<AVLNode *>(node->right->right);
-        AVLNode*tmp1=static_cast<AVLNode *>(node->left);
-        tmp->parent=node;
+        // AVLNode*tmp=static_cast<AVLNode *>(node->right->right);
+        // AVLNode*tmp1=static_cast<AVLNode *>(node->left);
+        // tmp->parent=node;
 
+        swap_data_and_childs(static_cast<AVLNode *>(node->right->right), static_cast<AVLNode *>(node->left));
 
-
-        tmp1->parent=node->right;
+        // tmp1->parent=node->right;
         // node->right->right->parent=node;
 
         Balance(node);
@@ -555,16 +722,17 @@ class AVLTree : protected Tree<T, H> {
     };
 
     AVLNode *RR(AVLNode *node) {
-        swap_data(node,static_cast<AVLNode*>(node->right));
+        swap_data(node, static_cast<AVLNode *>(node->right));
         swap_pointer(node);
-        swap_pointer(static_cast<AVLNode*>(node->left));
+        swap_pointer(static_cast<AVLNode *>(node->left));
 
-        AVLNode *tmp = static_cast<AVLNode *>(node->left->left);
+        // AVLNode *tmp = static_cast<AVLNode *>(node->left->left);
 
-        AVLNode *tmp1 = static_cast<AVLNode *>(node->right);
-        tmp->parent = node;
+        // AVLNode *tmp1 = static_cast<AVLNode *>(node->right);
+        // tmp->parent = node;
 
-        tmp1->parent = static_cast<AVLNode*>(node->left);
+        swap_data_and_childs(static_cast<AVLNode *>(node->left->left), static_cast<AVLNode *>(node->right));
+        // tmp1->parent = static_cast<AVLNode*>(node->left);
 
         Balance(node);
         Balance(static_cast<AVLNode *>(node->left));
@@ -573,25 +741,30 @@ class AVLTree : protected Tree<T, H> {
     };
 
     AVLNode *RL(AVLNode *node) {
-        swap_data(node,static_cast<AVLNode*>(node->right->left));
-        AVLNode* n1=static_cast<AVLNode*>(node->left);
-        AVLNode* n2=static_cast<AVLNode*>(node->right->left);
-        n1->parent=static_cast<AVLNode*>(node->right);
-        n2->parent=node;
-        swap_pointer(n1);
+        swap_data(node, static_cast<AVLNode *>(node->right));
 
-        AVLNode* n3=static_cast<AVLNode*>(node->left->left);
+        swap_pointer(node);
+        swap_pointer(static_cast<AVLNode *>(node->left));
 
-        n3->parent=static_cast<AVLNode*>(node->right);
+        swap_data_and_childs(static_cast<AVLNode *>(node->left->right), static_cast<AVLNode *>(node->right));
 
-
+        Balance(node);
+        Balance(static_cast<AVLNode *>(node->left));
 
         return node;
-    };
+    }
     AVLNode *LR(AVLNode *node) {
-        node->data.key++;
-        node->data.key--;
-        return nullptr;
+        swap_data(node, static_cast<AVLNode *>(node->left));
+
+        swap_pointer(node);
+        swap_pointer(static_cast<AVLNode *>(node->right));
+
+        swap_data_and_childs(static_cast<AVLNode *>(node->right->left), static_cast<AVLNode *>(node->left));
+
+        Balance(node);
+        Balance(static_cast<AVLNode *>(node->right));
+
+        return node;
     };
 
     AVLNode *_Insert(AVLNode *node, const T key, const H value, AVLNode *parent) {
@@ -614,7 +787,7 @@ class AVLTree : protected Tree<T, H> {
                 RL(node);
             }
         }
-        if (Balance(node) == -1) {
+        if (Balance(node) == -2) {
             if (Balance(static_cast<AVLNode *>(node->left)) == 1) {
                 LR(node);
             } else {

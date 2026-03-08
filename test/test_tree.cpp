@@ -627,9 +627,32 @@ TEST(BasicTree, CustomKeyType) {
 TEST(AVLTreeTest, BasicInsert) {
     AVLTree<int, string> tree;
     tree.Insert(50, "50");
-    tree.Insert(40, "40");
-    tree.Insert(30, "30");
-    tree.Insert(20, "двадцать");
-    tree.Insert(10, "тен");
+    tree.Insert(72, "72");
+    tree.Insert(17, "17");
+    tree.Insert(12, "12");
+    tree.Insert(23, "23");
+    tree.Insert(14, "14");
+    tree.Insert(19, "19");
+    tree.Insert(54, "54");
+    tree.Insert(76, "76");
+    tree.Insert(67, "67");
+    tree.Insert(9, "9");
+
     tree._printTreeWithKey(tree.GetFirst());
+
+    if(*tree.Find(9)=="9"){
+        cout<<"finded 9"<<endl;
+    }
+
+    if(tree.Find(1000)==nullptr){
+        cout<<"nothing"<<endl;
+    }
+
+    tree.Delete(9);
+
+    if(tree.Find(9)==nullptr){
+        cout<<"9 is deleted"<<endl;
+    }
+
+
 }
