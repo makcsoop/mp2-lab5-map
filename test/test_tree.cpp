@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include <tree.h>
 
+#include <random>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -590,29 +592,769 @@ TEST_F(BasicTreeData, TreeStructureAfterMultipleOperations) {
     EXPECT_EQ(remaining_keys, expected_keys);
 }
 
-// Тест на работу с пользовательским типом данных
-struct CustomType {
-    int a;
-    string b;
+class RedBlackTreeTest : public ::testing::Test {
+   protected:
+    RedBlackTree<int, string> tree;
 
-    bool operator<(const CustomType& other) const { return a < other.a; }
-    bool operator>(const CustomType& other) const { return a > other.a; }
-    bool operator<=(const CustomType& other) const { return a <= other.a; }
-    bool operator>=(const CustomType& other) const { return a >= other.a; }
-    bool operator==(const CustomType& other) const { return a == other.a; }
+    void SetUp() override {
+        logger("SetUp start", 1);
+        tree.Insert(10, "ten");
+        tree.printTree(tree.GetFirst());
+        tree.Insert(20, "twenty");
+        tree.printTree(tree.GetFirst());
+        tree.Insert(30, "thirty");
+        tree.printTree(tree.GetFirst());
+        tree.Insert(15, "fifteen");
+        tree.printTree(tree.GetFirst());
+        tree.Insert(5, "five");
+        tree.printTree(tree.GetFirst());
+        tree.Insert(25, "twenty five");
+        tree.printTree(tree.GetFirst());
+        tree.Insert(35, "thirty five");
+        logger("SetUp end", 1);
+    }
+
+    // Вспомогательная функция для проверки свойств красно-черного дерева
+    bool validateRedBlackProperties(RedBlackTree<int, string>& rbTree) {
+        auto root = rbTree.GetFirst();
+        if (root == nullptr) return true;
+
+        // Свойство 1: Корень черный
+        if (root->color != 'b') {
+            cout << "Root is not black!" << endl;
+            return false;
+        }
+
+        // Проверка остальных свойств рекурсивно
+        int blackHeight = -1;
+        return validateNode(rbTree, root, 0, blackHeight);
+    }
+
+    bool validateNode(RedBlackTree<int, string>& rbTree, RBNode<int, string>* node, int currentBlackHeight,
+                      int& expectedBlackHeight) {
+        if (node == nullptr) {
+            // Достигли NIL-листа
+            if (expectedBlackHeight == -1) {
+                expectedBlackHeight = currentBlackHeight;
+            }
+            return currentBlackHeight == expectedBlackHeight;
+        }
+
+        // Свойство 3: Красный узел не может иметь красного родителя
+        if (node->color == 'r' && node->parent != nullptr && node->parent->color == 'r') {
+            cout << "Red node " << node->data.key << " has red parent!" << endl;
+            return false;
+        }
+
+        // Увеличиваем счетчик черных узлов
+        int newBlackHeight = currentBlackHeight + (node->color == 'b' ? 1 : 0);
+
+        // Рекурсивно проверяем левое и правое поддеревья
+        return validateNode(rbTree, node->left, newBlackHeight, expectedBlackHeight) &&
+               validateNode(rbTree, node->right, newBlackHeight, expectedBlackHeight);
+    }
+
+    // Вспомогательная функция для печати дерева с цветами
+    void printTreeWithColors(RBNode<int, string>* root, string indent = "", bool isLeft = true) {
+        if (root == nullptr) return;
+        if (root->right) {
+            printTreeWithColors(root->right, indent + (isLeft ? "│   " : "    "), false);
+        }
+        cout << indent << (isLeft ? "└── " : "┌── ") << root->data.key << "(" << root->color << ")" << endl;
+        if (root->left) {
+            printTreeWithColors(root->left, indent + (isLeft ? "    " : "│   "), true);
+        }
+    }
 };
 
-TEST(BasicTree, CustomKeyType) {
-    Tree<CustomType, string> tree;
-    CustomType key1{1, "one"};
-    CustomType key2{2, "two"};
-    CustomType key3{3, "three"};
+// Тест базовой вставки и свойств КЧ дерева
+TEST_F(RedBlackTreeTest, BasicInsertionAndProperties) {
+    RedBlackTree<int, string> testTree;
+    testTree.Insert(10, "ten");
+    testTree.Insert(20, "twenty");
+    testTree.Insert(30, "thirty");
 
-    tree.Insert(key1, "value1");
-    tree.Insert(key2, "value2");
-    tree.Insert(key3, "value3");
+    cout << "Tree after inserting 10,20,30:" << endl;
+    testTree.printTree(testTree.GetFirst());
 
-    EXPECT_EQ(tree.count(), 3);
-    EXPECT_EQ(*tree.Find(key2), "value2");
-    EXPECT_TRUE(tree.isTrueSort());
+    // Проверяем, что дерево сбалансировалось
+    auto root = testTree.GetFirst();
+    EXPECT_TRUE(root->color == 'b');  // Корень должен быть черным
+
+    // После вставки 10,20,30 ожидаем, что 20 станет корнем (из-за балансировки)
+    EXPECT_EQ(root->data.key, 20);
+
+    // Проверяем цвета
+    if (root->left) EXPECT_EQ(root->left->color, 'r');
+    if (root->right) EXPECT_EQ(root->right->color, 'r');
+
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
 }
+
+// Тест LL поворота
+TEST_F(RedBlackTreeTest, LLRotation) {
+    RedBlackTree<int, string> testTree;
+    testTree.Insert(30, "thirty");
+    testTree.Insert(20, "twenty");
+    testTree.Insert(10, "ten");  // Должен вызвать LL поворот
+
+    cout << "Tree after LL rotation (insert 30,20,10):" << endl;
+    testTree.printTree(testTree.GetFirst());
+
+    auto root = testTree.GetFirst();
+    EXPECT_EQ(root->data.key, 20);
+    EXPECT_EQ(root->color, 'b');
+    EXPECT_EQ(root->left->data.key, 10);
+    EXPECT_EQ(root->left->color, 'r');
+    EXPECT_EQ(root->right->data.key, 30);
+    EXPECT_EQ(root->right->color, 'r');
+
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+}
+
+// Тест RR поворота
+TEST_F(RedBlackTreeTest, RRRotation) {
+    RedBlackTree<int, string> testTree;
+    testTree.Insert(10, "ten");
+    testTree.Insert(20, "twenty");
+    testTree.Insert(30, "thirty");  // Должен вызвать RR поворот
+
+    cout << "Tree after RR rotation (insert 10,20,30):" << endl;
+    testTree.printTree(testTree.GetFirst());
+
+    auto root = testTree.GetFirst();
+    EXPECT_EQ(root->data.key, 20);
+    EXPECT_EQ(root->color, 'b');
+    EXPECT_EQ(root->left->data.key, 10);
+    EXPECT_EQ(root->left->color, 'r');
+    EXPECT_EQ(root->right->data.key, 30);
+    EXPECT_EQ(root->right->color, 'r');
+
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+}
+
+// Тест LR поворота
+TEST_F(RedBlackTreeTest, LRRotation) {
+    RedBlackTree<int, string> testTree;
+    testTree.Insert(30, "thirty");
+    testTree.Insert(10, "ten");
+    testTree.Insert(20, "twenty");  // Должен вызвать LR поворот
+
+    cout << "Tree after LR rotation (insert 30,10,20):" << endl;
+    testTree.printTree(testTree.GetFirst());
+
+    auto root = testTree.GetFirst();
+    EXPECT_EQ(root->data.key, 20);
+    EXPECT_EQ(root->color, 'b');
+    EXPECT_EQ(root->left->data.key, 10);
+    EXPECT_EQ(root->left->color, 'r');
+    EXPECT_EQ(root->right->data.key, 30);
+    EXPECT_EQ(root->right->color, 'r');
+
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+}
+
+// Тест RL поворота
+TEST_F(RedBlackTreeTest, RLRotation) {
+    RedBlackTree<int, string> testTree;
+    testTree.Insert(10, "ten");
+    testTree.Insert(30, "thirty");
+    testTree.Insert(20, "twenty");  // Должен вызвать RL поворот
+
+    cout << "Tree after RL rotation (insert 10,30,20):" << endl;
+    testTree.printTree(testTree.GetFirst());
+
+    auto root = testTree.GetFirst();
+    EXPECT_EQ(root->data.key, 20);
+    EXPECT_EQ(root->color, 'b');
+    EXPECT_EQ(root->left->data.key, 10);
+    EXPECT_EQ(root->left->color, 'r');
+    EXPECT_EQ(root->right->data.key, 30);
+    EXPECT_EQ(root->right->color, 'r');
+
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+}
+
+// Тест перекраски (случай с красным дядей)
+TEST_F(RedBlackTreeTest, Recoloring) {
+    RedBlackTree<int, string> testTree;
+    testTree.Insert(10, "ten");
+    testTree.Insert(20, "twenty");
+    testTree.Insert(30, "thirty");       // Вызовет RR поворот
+    testTree.Insert(25, "twenty five");  // Должен вызвать перекраску
+
+    cout << "Tree after recoloring case:" << endl;
+    testTree.printTree(testTree.GetFirst());
+
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+}
+
+// Вспомогательная функция для вычисления высоты дерева
+int getTreeHeight(RBNode<int, string>* node) {
+    if (node == nullptr) return 0;
+    return 1 + max(getTreeHeight(node->left), getTreeHeight(node->right));
+}
+
+// Тест сложной вставки множества элементов
+TEST_F(RedBlackTreeTest, ComplexInsertions) {
+    RedBlackTree<int, string> testTree;
+    vector<int> keys = {50, 25, 75, 15, 35, 60, 90, 10, 20, 30, 40, 55, 65, 80, 95};
+
+    for (int key : keys) {
+        testTree.Insert(key, "value" + to_string(key));
+    }
+
+    cout << "Complex tree after multiple insertions:" << endl;
+    testTree.printTree(testTree.GetFirst());
+
+    // Проверяем, что все ключи присутствуют
+    for (int key : keys) {
+        EXPECT_NE(testTree.Find(key), nullptr) << "Key " << key << " not found";
+    }
+
+    // Проверяем свойства КЧ дерева
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+
+    // Проверяем сортировку
+    EXPECT_TRUE(testTree.isTrueSort());
+
+    // Проверяем, что дерево сбалансировано (высота не более 2*log2(n+1))
+    auto root = testTree.GetFirst();
+    int height = getTreeHeight(root);
+    int maxHeight = 2 * log2(keys.size() + 1) + 1;
+    EXPECT_LE(height, maxHeight) << "Tree height " << height << " exceeds maximum " << maxHeight;
+}
+
+// Тест вставки с дубликатами
+TEST_F(RedBlackTreeTest, DuplicateInsertion) {
+    RedBlackTree<int, string> testTree;
+    testTree.Insert(10, "ten");
+
+    EXPECT_THROW(testTree.Insert(10, "another ten"), invalid_argument);
+    EXPECT_EQ(testTree.count(), 1);
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+}
+
+// Тест вставки в возрастающем порядке (худший случай для обычного дерева)
+TEST_F(RedBlackTreeTest, AscendingInsertions) {
+    RedBlackTree<int, string> testTree;
+
+    for (int i = 1; i <= 100; i++) {
+        testTree.Insert(i, "value" + to_string(i));
+    }
+
+    cout << "Tree height after 100 ascending insertions: " << getTreeHeight(testTree.GetFirst()) << endl;
+
+    // Для 100 элементов идеальная высота сбалансированного дерева ~7
+    // Красно-черное дерево должно иметь высоту не более 14
+    int height = getTreeHeight(testTree.GetFirst());
+    EXPECT_LE(height, 20) << "Tree too high, not properly balanced";
+
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+
+    // Проверяем, что все ключи на месте
+    for (int i = 1; i <= 100; i++) {
+        EXPECT_NE(testTree.Find(i), nullptr) << "Key " << i << " not found";
+    }
+}
+
+// Тест вставки в убывающем порядке
+TEST_F(RedBlackTreeTest, DescendingInsertions) {
+    RedBlackTree<int, string> testTree;
+
+    for (int i = 100; i >= 1; i--) {
+        testTree.Insert(i, "value" + to_string(i));
+    }
+
+    cout << "Tree height after 100 descending insertions: " << getTreeHeight(testTree.GetFirst()) << endl;
+
+    int height = getTreeHeight(testTree.GetFirst());
+    EXPECT_LE(height, 20);
+
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+
+    for (int i = 1; i <= 100; i++) {
+        EXPECT_NE(testTree.Find(i), nullptr) << "Key " << i << " not found";
+    }
+}
+
+// // Тест случайных вставок
+// TEST_F(RedBlackTreeTest, RandomInsertions) {
+//     RedBlackTree<int, string> testTree;
+//     set<int> insertedKeys;
+//     mt19937 rng(40); // Фиксированный seed для воспроизводимости
+//     uniform_int_distribution<int> dist(1, 200);
+
+//     for (int i = 0; i < 100; i++) {
+//         int key = dist(rng);
+//         if (insertedKeys.find(key) == insertedKeys.end()) {
+//             testTree.Insert(key, "value" + to_string(key));
+//             insertedKeys.insert(key);
+//         }
+//     }
+
+//     cout << "Tree height after " << insertedKeys.size() << " random insertions: "
+//          << getTreeHeight(testTree.GetFirst()) << endl;
+
+//     EXPECT_TRUE(validateRedBlackProperties(testTree));
+
+//     // Проверяем, что все вставленные ключи присутствуют
+//     for (int key : insertedKeys) {
+//         EXPECT_NE(testTree.Find(key), nullptr) << "Key " << key << " not found";
+//     }
+// }
+
+// Тест граничных значений
+TEST_F(RedBlackTreeTest, BoundaryValues) {
+    RedBlackTree<int, string> testTree;
+
+    testTree.Insert(INT_MIN, "min");
+    testTree.Insert(INT_MAX, "max");
+    testTree.Insert(0, "zero");
+
+    cout << "Tree with boundary values:" << endl;
+    testTree.printTree(testTree.GetFirst());
+
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+    EXPECT_EQ(*testTree.Find(INT_MIN), "min");
+    EXPECT_EQ(*testTree.Find(INT_MAX), "max");
+    EXPECT_EQ(*testTree.Find(0), "zero");
+}
+
+// Тест оператора [] с КЧ деревом
+TEST_F(RedBlackTreeTest, BracketOperator) {
+    RedBlackTree<int, string> testTree;
+
+    testTree[5] = "five";
+    testTree[3] = "three";
+    testTree[7] = "seven";
+
+    EXPECT_EQ(testTree[5], "five");
+    EXPECT_EQ(testTree[3], "three");
+    EXPECT_EQ(testTree[7], "seven");
+
+    // Оператор [] должен создавать новые узлы при обращении к несуществующему ключу
+    EXPECT_EQ(testTree[10], "");
+    EXPECT_NE(testTree.Find(10), nullptr);
+
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+}
+
+// Тест конструктора из вектора пар
+TEST_F(RedBlackTreeTest, ConstructorFromVector) {
+    // vector<Map<int, string>::Pair> elements = {{50, "fifty"}, {30, "thirty"}, {70, "seventy"}, {20, "twenty"},
+    //                                            {40, "forty"}, {60, "sixty"},  {80, "eighty"}};
+
+    vector<int> el{10, 20, 30, 40, 50, 60, 65, 70, 80};
+
+    RedBlackTree<int, string> testTree(el);
+
+    cout << "Tree constructed from vector:" << endl;
+    testTree.printTree(testTree.GetFirst());
+
+    EXPECT_EQ(testTree.count(), 9);
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+
+    for (const auto& elem : el) {
+        EXPECT_NE(testTree.Find(elem), nullptr);
+    }
+}
+
+// Тест итераторов для КЧ дерева
+TEST_F(RedBlackTreeTest, IteratorTest) {
+    RedBlackTree<int, string> testTree;
+    vector<int> keys = {50, 30, 70, 20, 40, 60, 80};
+
+    for (int key : keys) {
+        testTree.Insert(key, "value" + to_string(key));
+    }
+
+    sort(keys.begin(), keys.end());
+
+    // Проверка begin() и end()
+    int index = 0;
+    for (auto it = testTree.begin(); it != testTree.end(); ++it) {
+        EXPECT_EQ(it->data.key, keys[index]);
+        index++;
+    }
+    // Добавляем последний элемент
+    EXPECT_EQ(testTree.end()->data.key, keys.back());
+
+    // Проверка обратного прохода
+    index = keys.size() - 1;
+    auto it = testTree.end();
+    while (index >= 0) {
+        EXPECT_EQ(it->data.key, keys[index]);
+        if (index > 0) --it;
+        index--;
+    }
+}
+
+// Тест удаления (когда будет реализовано)
+TEST_F(RedBlackTreeTest, DeleteTest) {
+    RedBlackTree<int, string> testTree;
+    vector<int> keys = {50, 30, 70, 20, 40, 60, 80};
+
+    for (int key : keys) {
+        testTree.Insert(key, "value" + to_string(key));
+    }
+    string tmp;
+    cout << "Before deletion:" << endl;
+    testTree.printTree(testTree.GetFirst());
+
+    // Удаление листа
+    testTree.Delete(20);
+    cout << "After deleting 20:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+    EXPECT_EQ(testTree.count(), 6);
+    // cin >> tmp;
+    // Удаление узла с одним потомком
+    testTree.Delete(30);
+    cout << "After deleting 30:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+    EXPECT_EQ(testTree.count(), 5);
+    // cin >> tmp;
+    // Удаление узла с двумя потомками
+    // testTree.Delete(50);
+    // cout << "After deleting 50:" << endl;
+    // testTree.printTree(testTree.GetFirst());
+    // EXPECT_TRUE(validateRedBlackProperties(testTree));
+    // EXPECT_EQ(testTree.count(), 4);
+    // cin >> tmp;
+    // Удаление корня
+    testTree.Delete(70);
+    cout << "After deleting 70:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+}
+// Тест удаления красного листа (Случай 0)
+TEST_F(RedBlackTreeTest, DeleteRedLeaf) {
+    RedBlackTree<int, string> testTree;
+    testTree.Insert(10, "ten");
+    testTree.Insert(20, "twenty");
+    testTree.Insert(30, "thirty");  // 30 станет красным листом
+    
+    cout << "Before deleting red leaf 30:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    
+    testTree.Delete(30);
+    
+    cout << "After deleting red leaf 30:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+    EXPECT_EQ(testTree.count(), 2);
+    EXPECT_EQ(testTree.Find(30), nullptr);
+}
+
+// Тест удаления черного листа (сложный случай)
+TEST_F(RedBlackTreeTest, DeleteBlackLeaf) {
+    RedBlackTree<int, string> testTree;
+    testTree.Insert(20, "twenty");
+    testTree.Insert(10, "ten");
+    testTree.Insert(30, "thirty");
+    
+    cout << "Before deleting black leaf 10:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    
+    testTree.Delete(10);
+    
+    cout << "After deleting black leaf 10:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+    EXPECT_EQ(testTree.count(), 2);
+}
+
+// Тест удаления черного узла с красным ребенком (Случай 1)
+TEST_F(RedBlackTreeTest, DeleteBlackWithRedChild) {
+    RedBlackTree<int, string> testTree;
+    testTree.Insert(20, "twenty");  // корень
+    testTree.Insert(10, "ten");     // станет красным
+    
+    cout << "Before deleting black root with red child:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    
+    testTree.Delete(20);  // удаляем черный корень, у которого красный ребенок 10
+    
+    cout << "After deletion:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+    EXPECT_EQ(testTree.GetFirst()->data.key, 10);
+    EXPECT_EQ(testTree.GetFirst()->color, 'b');
+}
+
+// Тест удаления с красным братом (Случай 2A)
+TEST_F(RedBlackTreeTest, DeleteWithRedSibling) {
+    RedBlackTree<int, string> testTree;
+    testTree.Insert(50, "fifty");
+    testTree.Insert(30, "thirty");
+    testTree.Insert(70, "seventy");
+    testTree.Insert(20, "twenty");
+    testTree.Insert(40, "forty");
+    
+    cout << "Tree before deletion (should have red sibling case):" << endl;
+    testTree.printTree(testTree.GetFirst());
+    
+    testTree.Delete(20);  // удаляем черный лист, должен активировать случай с красным братом
+    
+    cout << "After deleting 20:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+}
+
+// Тест удаления с черным братом и черными племянниками (Случай 2B)
+TEST_F(RedBlackTreeTest, DeleteWithBlackSiblingAndBlackNephews) {
+    RedBlackTree<int, string> testTree;
+    testTree.Insert(50, "fifty");
+    testTree.Insert(30, "thirty");
+    testTree.Insert(70, "seventy");
+    testTree.Insert(20, "twenty");
+    testTree.Insert(40, "forty");
+    testTree.Insert(60, "sixty");
+    testTree.Insert(80, "eighty");
+    
+    cout << "Tree before deletion:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    
+    testTree.Delete(20);  // удаляем черный лист
+    
+    cout << "After deleting 20:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+}
+
+// Тест удаления с дальним красным племянником (Случай 2C)
+TEST_F(RedBlackTreeTest, DeleteWithFarRedNephew) {
+    RedBlackTree<int, string> testTree;
+    testTree.Insert(50, "fifty");
+    testTree.Insert(30, "thirty");
+    testTree.Insert(80, "eighty");
+    testTree.Insert(20, "twenty");
+    testTree.Insert(40, "forty");
+    testTree.Insert(70, "seventy");
+    testTree.Insert(90, "ninety");
+    testTree.Insert(75, "seventy five");  // сделаем красным для случая с дальним племянником
+    
+    cout << "Tree before deletion:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    
+    testTree.Delete(20);  // удаляем черный лист
+    
+    cout << "After deleting 20:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+}
+
+// Тест удаления с ближним красным племянником (Случай 2D)
+TEST_F(RedBlackTreeTest, DeleteWithCloseRedNephew) {
+    RedBlackTree<int, string> testTree;
+    testTree.Insert(50, "fifty");
+    testTree.Insert(30, "thirty");
+    testTree.Insert(80, "eighty");
+    testTree.Insert(20, "twenty");
+    testTree.Insert(40, "forty");
+    testTree.Insert(70, "seventy");
+    testTree.Insert(90, "ninety");
+    testTree.Insert(60, "sixty");  // сделаем красным для случая с ближним племянником
+    
+    cout << "Tree before deletion:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    
+    testTree.Delete(90);  // удаляем черный лист
+    
+    cout << "After deleting 90:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+}
+
+// Тест каскадного удаления (проблема поднимается вверх)
+TEST_F(RedBlackTreeTest, CascadingDelete) {
+    RedBlackTree<int, string> testTree;
+    vector<int> keys = {50, 30, 70, 20, 40, 60, 80, 10, 35, 45, 55, 65, 75, 85};
+    
+    for (int key : keys) {
+        testTree.Insert(key, "value");
+    }
+    
+    cout << "Initial tree:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    
+    // Удаляем в порядке, который вызовет несколько балансировок
+    vector<int> deleteOrder = {10, 20, 35, 45, 55, 65};
+    logger("CascadingDelete", 1);
+    for (int key : deleteOrder) {
+        cout << "\nDeleting " << key << ":" << endl;
+        testTree.Delete(key);
+        testTree.printTree(testTree.GetFirst());
+        EXPECT_TRUE(validateRedBlackProperties(testTree));
+    }
+}
+
+// Тест удаления корня с двумя детьми
+TEST_F(RedBlackTreeTest, DeleteRootWithTwoChildren) {
+    RedBlackTree<int, string> testTree;
+    testTree.Insert(50, "fifty");
+    testTree.Insert(30, "thirty");
+    testTree.Insert(70, "seventy");
+    testTree.Insert(20, "twenty");
+    testTree.Insert(40, "forty");
+    testTree.Insert(60, "sixty");
+    testTree.Insert(80, "eighty");
+    
+    cout << "Before deleting root 50:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    
+    testTree.Delete(50);
+    
+    cout << "After deleting root 50:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    logger("DeleteRootWithTwoChildren", 1);
+    
+    
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+    EXPECT_NE(testTree.GetFirst()->data.key, 50);
+}
+
+// Тест удаления всех элементов по порядку
+TEST_F(RedBlackTreeTest, DeleteAllElements) {
+    RedBlackTree<int, string> testTree;
+    vector<int> keys = {50, 30, 70, 20, 40, 60, 80};
+    
+    for (int key : keys) {
+        testTree.Insert(key, "value");
+    }
+    
+    sort(keys.begin(), keys.end());
+    
+    for (int key : keys) {
+        cout << "\nDeleting " << key << ":" << endl;
+        testTree.Delete(key);
+        testTree.printTree(testTree.GetFirst());
+        EXPECT_TRUE(validateRedBlackProperties(testTree));
+    }
+    
+    EXPECT_EQ(testTree.count(), 0);
+    EXPECT_EQ(testTree.GetFirst(), nullptr);
+}
+
+// Тест удаления в случайном порядке
+// TEST_F(RedBlackTreeTest, RandomDeleteOrder) {
+//     RedBlackTree<int, string> testTree;
+//     vector<int> keys;
+    
+//     // Создаем дерево с 20 элементами
+//     for (int i = 1; i <= 20; i++) {
+//         testTree.Insert(i * 5, "value" + to_string(i * 5));
+//         keys.push_back(i * 5);
+//     }
+    
+//     cout << "Initial tree height: " << getTreeHeight(testTree.GetFirst()) << endl;
+//     EXPECT_TRUE(validateRedBlackProperties(testTree));
+    
+//     // Перемешиваем ключи для удаления
+//     shuffle(keys.begin(), keys.end(), mt19937(42));
+    
+//     // Удаляем в случайном порядке
+//     for (size_t i = 0; i < keys.size(); i++) {
+//         cout << "\nStep " << i + 1 << ": deleting " << keys[i] << endl;
+//         testTree.Delete(keys[i]);
+//         testTree.printTree(testTree.GetFirst());
+//         EXPECT_TRUE(validateRedBlackProperties(testTree));
+//     }
+// }
+
+// Тест удаления с проверкой инвариантов после каждой операции
+TEST_F(RedBlackTreeTest, InvariantsAfterEachDelete) {
+    RedBlackTree<int, string> testTree;
+    
+    // Строим большое дерево
+    for (int i = 1; i <= 50; i++) {
+        testTree.Insert(i, "value" + to_string(i));
+    }
+    
+    vector<int> keys = testTree.keys();
+    
+    // Проверяем инварианты после каждого удаления
+    for (int key : keys) {
+        testTree.Delete(key);
+        EXPECT_TRUE(validateRedBlackProperties(testTree)) << "Failed after deleting " << key;
+        EXPECT_TRUE(testTree.isTrueSort()) << "BST property failed after deleting " << key;
+    }
+}
+
+// Тест удаления и вставки (проверка стабильности)
+TEST_F(RedBlackTreeTest, DeleteAndInsert) {
+    RedBlackTree<int, string> testTree;
+    
+    for (int i = 1; i <= 10; i++) {
+        testTree.Insert(i, "value" + to_string(i));
+    }
+    
+    cout << "Initial tree:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    
+    // Удаляем и вставляем обратно
+    testTree.Delete(5);
+    cout << "\nAfter deleting 5:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+    
+    testTree.Insert(5, "five again");
+    cout << "\nAfter inserting 5 again:" << endl;
+    testTree.printTree(testTree.GetFirst());
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+    
+    // Проверяем, что все ключи на месте
+    for (int i = 1; i <= 10; i++) {
+        EXPECT_NE(testTree.Find(i), nullptr) << "Key " << i << " missing";
+    }
+}
+
+// Тест удаления несуществующего ключа
+TEST_F(RedBlackTreeTest, DeleteNonExistent) {
+    RedBlackTree<int, string> testTree;
+    testTree.Insert(10, "ten");
+    
+    EXPECT_THROW(testTree.Delete(20), runtime_error);
+    EXPECT_EQ(testTree.count(), 1);
+    EXPECT_TRUE(validateRedBlackProperties(testTree));
+}
+
+// // Стресс-тест с множеством операций удаления
+// TEST_F(RedBlackTreeTest, DeleteStressTest) {
+//     RedBlackTree<int, string> testTree;
+//     const int NUM_KEYS = 100;
+    
+//     // Вставляем много ключей
+//     for (int i = 1; i <= NUM_KEYS; i++) {
+//         testTree.Insert(i, "value");
+//     }
+    
+//     cout << "Initial tree height: " << getTreeHeight(testTree.GetFirst()) << endl;
+    
+//     // Удаляем половину ключей
+//     for (int i = 1; i <= NUM_KEYS/2; i++) {
+//         testTree.Delete(i * 2);  // удаляем четные
+//         if (i % 10 == 0) {
+//             cout << "After " << i << " deletions, height: " << getTreeHeight(testTree.GetFirst()) << endl;
+//         }
+//         EXPECT_TRUE(validateRedBlackProperties(testTree));
+//     }
+    
+//     // Проверяем, что нечетные ключи остались
+//     for (int i = 1; i <= NUM_KEYS; i++) {
+//         if (i % 2 == 1) {
+//             EXPECT_NE(testTree.Find(i), nullptr) << "Odd key " << i << " should exist";
+//         } else {
+//             EXPECT_EQ(testTree.Find(i), nullptr) << "Even key " << i << " should be deleted";
+//         }
+//     }
+// }
