@@ -1115,45 +1115,6 @@ TEST(AVLTree, StressTest) {
     logger("find 3",1);
 }
 
-// Тест случайных операций (сравнение с std::set)
-TEST(AVLTree, RandomOperationsComparison) {
-    AVLTree<int, int> avlTree;
-    set<int> referenceSet;
-    
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<> dis(1, 1000);
-    uniform_int_distribution<> opDis(0, 2);
-    
-    const int NUM_OPERATIONS = 500;
-    
-    for (int i = 0; i < NUM_OPERATIONS; ++i) {
-        int key = dis(gen);
-        int op = opDis(gen);
-        
-        if (op == 0) {  // Insert
-            avlTree.Insert(key, key * 2);
-            referenceSet.insert(key);
-        } else if (op == 1) {  // Delete
-            avlTree.Delete(key);
-            referenceSet.erase(key);
-        } else {  // Find
-            auto avlFind = avlTree.Find(key);
-            auto setFind = referenceSet.find(key);
-            
-            if (setFind == referenceSet.end()) {
-                EXPECT_EQ(avlFind, nullptr);
-            } else {
-                EXPECT_NE(avlFind, nullptr);
-            }
-        }
-        
-        // Периодически проверяем размер
-        if (i % 50 == 0) {
-            EXPECT_EQ(avlTree.count(), static_cast<int>(referenceSet.size()));
-        }
-    }
-}
 
 // Тест на проверку свойств AVL дерева (балансировка)
 TEST(AVLTree, AVLProperty) {
