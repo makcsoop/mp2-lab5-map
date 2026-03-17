@@ -674,15 +674,15 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
     }
 
     void Insert(T key, H value) override {
-        logger("Insert RBT", 1);
+        // logger("Insert RBT", 1);
         BaseTree<T, H, RBNode<T, H>>::Insert(key, value);
         RBNodePtr needNode = this->FindNode(key);
         if (needNode != nullptr) {
-            logger("Correct insert", 1);
-            this->printTree(this->GetFirst());
+            // logger("Correct insert", 1);
+            //  this->printTree(this->GetFirst());
             this->Balance(needNode);
-            logger("Correct Balance", 1);
-            this->printTree(this->GetFirst());
+            // logger("Correct Balance", 1);
+            //  this->printTree(this->GetFirst());
         } else {
             throw invalid_argument("Inccorrect insert");
         }
@@ -698,35 +698,35 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
                 }
                 RBNodePtr uncle;
                 if (parentNode == parentNode->parent->left) {
-                    logger("uncle right", 1);
+                    //("uncle right", 1);
                     uncle = childNode->parent->parent->right;
                 } else {
-                    logger("uncle left", 1);
+                    // logger("uncle left", 1);
                     uncle = childNode->parent->parent->left;
                 }
                 if (uncle != nullptr) {
-                    logger(to_string(childNode->data.key) + " uncle:" + to_string(uncle->data.key), 1);
+                    // logger(to_string(childNode->data.key) + " uncle:" + to_string(uncle->data.key), 1);
                 }
 
                 if (uncle == nullptr || uncle->color == 'b') {
                     if (parentNode == parentNode->parent->left && childNode == parentNode->left) {  // LL
-                        logger("LL", 1);
+                        // logger("LL", 1);
                         this->LL(childNode);
                     } else if (parentNode == parentNode->parent->left &&
                                childNode == parentNode->right) {  // LR
-                        logger("LR", 1);
+                        // logger("LR", 1);
                         this->LR(childNode);
                     } else if (parentNode == parentNode->parent->right &&
                                childNode == parentNode->right) {  // RR
-                        logger("RR", 1);
+                        // logger("RR", 1);
                         this->RR(childNode);
                     } else {
-                        logger("RL", 1);  // RL
+                        // logger("RL", 1);  // RL
                         this->RL(childNode);
                     }
 
                 } else {
-                    logger("No route", 1);
+                    // logger("No route", 1);
                     uncle->color = 'b';
                     parentNode->color = 'b';
                     parentNode->parent->color = 'r';
@@ -770,7 +770,7 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
         childNode->left = parentNode;
         parentNode->right = nullptr;
         parentNode->parent = childNode;
-        this->printTree(this->GetFirst());
+        // this->printTree(this->GetFirst());
         this->LL(parentNode);
     }
 
@@ -822,13 +822,13 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
     }
 
     void Delete(T key) override {
-        logger("Delete RBT " + to_string(key), 1);
+        // logger("Delete RBT " + to_string(key), 1);
         RBNodePtr node = this->FindNode(key);
         if (!node) {
             throw runtime_error("Нет ключа");
         }
         if (node->left != nullptr && node->right != nullptr) {
-            logger("Node two children", 1);
+            // logger("Node two children", 1);
             RBNodePtr successor = node->right;
             while (successor->left != nullptr) {
                 successor = successor->left;
@@ -843,7 +843,7 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
         }
 
         if (node->color == 'r' && node->left == nullptr && node->right == nullptr) {
-            logger("Red Node 0 child", 1);
+            // logger("Red Node 0 child", 1);
             RBNodePtr parent = node->parent;
             if (parent != nullptr) {
                 if (parent->left == node) {
@@ -858,7 +858,7 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
         }
 
         if (node->color == 'b' && ((node->left != nullptr) ^ (node->right != nullptr)) == 1) {
-            logger("Black one red child", 1);
+            // logger("Black one red child", 1);
             RBNodePtr child = (node->left != nullptr) ? node->left : node->right;
             if (node->parent == nullptr) {
                 this->pFirst = child;
@@ -878,7 +878,7 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
         }
 
         if (node->color == 'b' && node->left == nullptr && node->right == nullptr) {
-            logger("Black Node", 1);
+            // logger("Black Node", 1);
             if (node == this->pFirst) {
                 delete node;
                 this->pFirst = nullptr;
@@ -913,7 +913,7 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
 
         // 2A: Красный брат
         if (brouther->color == 'r') {
-            logger("2A Red brouther", 1);
+            // logger("2A Red brouther", 1);
             parent->color = 'r';
             brouther->color = 'b';
             RBNodePtr grandpa = parent->parent;
@@ -950,7 +950,7 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
                 RBNodePtr broutherRight = brouther->right;
                 brouther->right = parent;
                 parent->left = broutherRight;
-                if (broutherRight){
+                if (broutherRight) {
                     broutherRight->parent = parent;
                 }
             }
@@ -963,7 +963,7 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
         bool rightNephewBlack = (brouther->right == nullptr || brouther->right->color == 'b');
 
         if (leftNephewBlack && rightNephewBlack) {
-            logger("2B: black brouther black nephews", 1);
+            // logger("2B: black brouther black nephews", 1);
             brouther->color = 'r';
 
             if (parent->color == 'r') {
@@ -979,7 +979,7 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
             // 2D: Ближний племянник красный (левый ребенок брата)
             if (brouther->left && brouther->left->color == 'r' &&
                 (brouther->right == nullptr || brouther->right->color == 'b')) {
-                logger("2D: red nephew", 1);
+                // logger("2D: red nephew", 1);
                 RBNodePtr nephew = brouther->left;
                 // Правый поворот
                 brouther->left = nephew->right;
@@ -1001,8 +1001,8 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
 
             // 2C: Дальний племянник красный (правый ребенок брата)
             if (brouther->right && brouther->right->color == 'r') {
-                logger("2C: Far red nephew", 1);
-                // Левый поворот
+                // logger("2C: Far red nephew", 1);
+                //  Левый поворот
                 brouther->color = parent->color;
                 parent->color = 'b';
                 brouther->right->color = 'b';
@@ -1029,7 +1029,7 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
             // 2D: Ближний племянник красный (правый ребенок брата)
             if (brouther->right && brouther->right->color == 'r' &&
                 (brouther->left == nullptr || brouther->left->color == 'b')) {
-                logger("2D: Close red nephew", 1);
+                // logger("2D: Close red nephew", 1);
 
                 RBNodePtr nephew = brouther->right;
 
@@ -1054,8 +1054,8 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
 
             // 2C: Дальний племянник красный (левый ребенок брата)
             if (brouther->left && brouther->left->color == 'r') {
-                logger("2C: Far red nephew", 1);
-                // Правый поворот
+                // logger("2C: Far red nephew", 1);
+                //  Правый поворот
                 brouther->color = parent->color;
                 parent->color = 'b';
                 brouther->left->color = 'b';
@@ -1074,7 +1074,7 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
                 RBNodePtr broutherRight = brouther->right;
                 brouther->right = parent;
                 parent->left = broutherRight;
-                if (broutherRight){
+                if (broutherRight) {
                     broutherRight->parent = parent;
                 }
             }

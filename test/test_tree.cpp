@@ -592,6 +592,22 @@ TEST_F(BasicTreeData, TreeStructureAfterMultipleOperations) {
     EXPECT_EQ(remaining_keys, expected_keys);
 }
 
+
+TEST_F(BasicTreeData, TestInterotEndMinus) {
+    Tree<int, string> tree;
+    vector<int> keys = {50, 30, 70, 20, 40, 60, 80, 10, 90};
+
+    for (int k : keys) {
+        tree.Insert(k, "value");
+    }
+
+    EXPECT_TRUE(tree.isTrueSort());
+    tree.printTree(tree.GetFirst());
+    auto iterotorEnd = tree.end();
+    EXPECT_EQ(90, (iterotorEnd--).m_ptr->data.key);
+   
+}
+
 class RedBlackTreeTest : public ::testing::Test {
    protected:
     RedBlackTree<int, string> tree;
@@ -599,17 +615,11 @@ class RedBlackTreeTest : public ::testing::Test {
     void SetUp() override {
         logger("SetUp start", 1);
         tree.Insert(10, "ten");
-        tree.printTree(tree.GetFirst());
         tree.Insert(20, "twenty");
-        tree.printTree(tree.GetFirst());
         tree.Insert(30, "thirty");
-        tree.printTree(tree.GetFirst());
         tree.Insert(15, "fifteen");
-        tree.printTree(tree.GetFirst());
         tree.Insert(5, "five");
-        tree.printTree(tree.GetFirst());
         tree.Insert(25, "twenty five");
-        tree.printTree(tree.GetFirst());
         tree.Insert(35, "thirty five");
         logger("SetUp end", 1);
     }
