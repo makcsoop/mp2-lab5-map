@@ -88,6 +88,11 @@ int main() {
     rdtree6.Insert(25, "123");
     rdtree6.printTree(rdtree5.GetFirst());
 
+    AVLTree<int, string> tr;
+    tr.Insert(12, "1231");
+    tr.Insert(13, "1231");
+    tr.Insert(14, "1231");
+
     // rdtree.Insert(1, "1234");
     // rdtree.Insert(2, "1234");
     // rdtree.printTree(rdtree.GetFirst());
