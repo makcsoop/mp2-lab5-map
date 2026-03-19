@@ -411,7 +411,6 @@ TEST_F(BasicTreeData, DeleteRootNode) {
     EXPECT_TRUE(root->data.key == 30 || root->data.key == 70);
 }
 
-
 // Тесты метода count
 TEST_F(BasicTreeData, CountAfterOperations) {
     EXPECT_EQ(table.count(), 3);
@@ -1654,7 +1653,6 @@ TEST_F(AVLTreeDeleteTest, DeleteRootWithTwoChildren) {
     EXPECT_TRUE(root->data.key == 30 || root->data.key == 70);
 }
 
-
 TEST_F(AVLTreeDeleteTest, DeleteAndBalanceCheck) {
     // Удаляем узел, который вызовет перебалансировку
     tree.Delete(20);
@@ -1912,7 +1910,6 @@ TEST(AVLTreeTest, IntValues) {
     EXPECT_EQ(*tree.Find(5), 50);
     EXPECT_EQ(*tree.Find(15), 150);
 }
-
 
 // Стресс-тест
 TEST(AVLTreeTest, StressTest) {

@@ -638,345 +638,495 @@ class Tree : public BaseTree<T, H, Node<T, H>> {
 template <typename T, typename H>
 class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
    protected:
-    using typename Map<T, H>::Pair;
-    using AVLNodePtr = AVLNode<T, H> *;
+    using typename BaseTree<T, H, AVLNode<T, H>>::Pair;
+    using Node = AVLNode<T, H>;
+    using Iterator = TreeIterator<Node>;
 
-    // Вспомогательная функция для обновления родительских связей
-    void updateParent(AVLNodePtr node, AVLNodePtr newChild, AVLNodePtr oldChild) {
-        if (node == nullptr) return;
-
-        if (node->left == oldChild) {
-            node->left = newChild;
-        } else if (node->right == oldChild) {
-            node->right = newChild;
-        }
-
-        if (newChild != nullptr) {
-            newChild->parent = node;
-        }
-    }
-
-    // Получение высоты узла
-    int getHeight(AVLNodePtr node) {
-        if (node == nullptr) return 0;
-
-        int leftHeight = getHeight(static_cast<AVLNodePtr>(node->left));
-        int rightHeight = getHeight(static_cast<AVLNodePtr>(node->right));
-
-        return 1 + std::max(leftHeight, rightHeight);
-    }
-
-    // Обновление баланса узла
-    void updateBalance(AVLNodePtr node) {
-        if (node == nullptr) return;
-
-        int leftHeight = getHeight(static_cast<AVLNodePtr>(node->left));
-        int rightHeight = getHeight(static_cast<AVLNodePtr>(node->right));
-
-        node->_balance = rightHeight - leftHeight;
-    }
-
-    // Правый поворот (LL)
-    AVLNodePtr rotateRight(AVLNodePtr y) {
-        if (y == nullptr || y->left == nullptr) return y;
-
-        AVLNodePtr x = static_cast<AVLNodePtr>(y->left);
-        AVLNodePtr T2 = static_cast<AVLNodePtr>(x->right);
-        AVLNodePtr parent = static_cast<AVLNodePtr>(y->parent);
-
-        // Выполняем поворот
-        x->right = y;
-        y->left = T2;
-
-        // Обновляем родительские указатели
-        x->parent = parent;
-        y->parent = x;
-        if (T2 != nullptr) {
-            T2->parent = y;
-        }
-
-        // Обновляем связь с родителем
-        if (parent != nullptr) {
-            if (parent->left == y) {
-                parent->left = x;
-            } else {
-                parent->right = x;
-            }
-        } else {
-            this->pFirst = x;
-        }
-
-        // Обновляем балансы
-        updateBalance(y);
-        updateBalance(x);
-
-        return x;
-    }
-
-    // Левый поворот (RR)
-    AVLNodePtr rotateLeft(AVLNodePtr x) {
-        if (x == nullptr || x->right == nullptr) return x;
-
-        AVLNodePtr y = static_cast<AVLNodePtr>(x->right);
-        AVLNodePtr T2 = static_cast<AVLNodePtr>(y->left);
-        AVLNodePtr parent = static_cast<AVLNodePtr>(x->parent);
-
-        // Выполняем поворот
-        y->left = x;
-        x->right = T2;
-
-        // Обновляем родительские указатели
-        y->parent = parent;
-        x->parent = y;
-        if (T2 != nullptr) {
-            T2->parent = x;
-        }
-
-        // Обновляем связь с родителем
-        if (parent != nullptr) {
-            if (parent->left == x) {
-                parent->left = y;
-            } else {
-                parent->right = y;
-            }
-        } else {
-            this->pFirst = y;
-        }
-
-        // Обновляем балансы
-        updateBalance(x);
-        updateBalance(y);
-
-        return y;
-    }
-
-    // Балансировка узла
-    AVLNodePtr balance(AVLNodePtr node) {
-        if (node == nullptr) return nullptr;
-
-        updateBalance(node);
-
-        // Если баланс нарушен
-        if (node->_balance > 1) {  // Правое поддерево тяжелее
-            AVLNodePtr rightChild = static_cast<AVLNodePtr>(node->right);
-            if (rightChild != nullptr && rightChild->_balance < 0) {
-                // RL случай
-                node->right = rotateRight(rightChild);
-            }
-            // RR случай
-            return rotateLeft(node);
-        }
-
-        if (node->_balance < -1) {  // Левое поддерево тяжелее
-            AVLNodePtr leftChild = static_cast<AVLNodePtr>(node->left);
-            if (leftChild != nullptr && leftChild->_balance > 0) {
-                // LR случай
-                node->left = rotateLeft(leftChild);
-            }
-            // LL случай
-            return rotateRight(node);
-        }
-
-        return node;
-    }
-
-    // Рекурсивная вставка
-    AVLNodePtr insertRec(AVLNodePtr node, const T &key, const H &value, AVLNodePtr parent) {
-        if (node == nullptr) {
-            // Создаем новый узел с правильными указателями
-            AVLNode<T, H> *newNode = new AVLNode<T, H>(Pair{key, value},  // данные
-                                                       nullptr,           // левый потомок
-                                                       nullptr,           // правый потомок
-                                                       parent,            // родитель
-                                                       0                  // баланс
-            );
-            return newNode;
-        }
-
-        if (key < node->data.key) {
-            node->left = insertRec(static_cast<AVLNodePtr>(node->left), key, value, node);
-        } else if (key > node->data.key) {
-            node->right = insertRec(static_cast<AVLNodePtr>(node->right), key, value, node);
-        } else {
-            throw std::invalid_argument("Ключ уже существует");
-        }
-
-        // Балансируем узел после вставки
-        return balance(node);
-    }
-
-    // Поиск минимального узла в поддереве
-    AVLNodePtr findMin(AVLNodePtr node) {
-        if (node == nullptr) return nullptr;
-        while (node->left != nullptr) {
-            node = static_cast<AVLNodePtr>(node->left);
-        }
-        return node;
-    }
-
-    // Рекурсивное удаление
-    AVLNodePtr deleteRec(AVLNodePtr node, const T &key) {
-        if (node == nullptr) return nullptr;
-
-        // Поиск узла для удаления
-        if (key < node->data.key) {
-            node->left = deleteRec(static_cast<AVLNodePtr>(node->left), key);
-            if (node->left != nullptr) {
-                node->left->parent = node;
-            }
-        } else if (key > node->data.key) {
-            node->right = deleteRec(static_cast<AVLNodePtr>(node->right), key);
-            if (node->right != nullptr) {
-                node->right->parent = node;
-            }
-        } else {
-            // Узел найден - удаляем
-
-            // Случай 1: нет потомков
-            if (node->left == nullptr && node->right == nullptr) {
-                delete node;
-                return nullptr;
-            }
-
-            // Случай 2: один потомок
-            if (node->left == nullptr) {
-                AVLNodePtr temp = static_cast<AVLNodePtr>(node->right);
-                temp->parent = node->parent;
-                delete node;
-                return temp;
-            }
-            if (node->right == nullptr) {
-                AVLNodePtr temp = static_cast<AVLNodePtr>(node->left);
-                temp->parent = node->parent;
-                delete node;
-                return temp;
-            }
-
-            // Случай 3: два потомка
-            // Находим минимальный узел в правом поддереве
-            AVLNodePtr minNode = findMin(static_cast<AVLNodePtr>(node->right));
-
-            // Копируем данные
-            node->data = minNode->data;
-
-            // Удаляем минимальный узел
-            node->right = deleteRec(static_cast<AVLNodePtr>(node->right), minNode->data.key);
-            if (node->right != nullptr) {
-                node->right->parent = node;
-            }
-        }
-
-        // Балансируем узел после удаления
-        return balance(node);
-    }
-
-    // Валидация дерева (для отладки)
-    bool validateTree(AVLNodePtr node, AVLNodePtr parent = nullptr) {
-        if (node == nullptr) return true;
-
-        // Проверяем родительскую связь
-        if (node->parent != parent) {
-            std::cout << "Ошибка: неверный родитель у узла " << node->data.key << std::endl;
-            return false;
-        }
-
-        // Проверяем баланс
-        updateBalance(node);
-        if (node->_balance < -1 || node->_balance > 1) {
-            std::cout << "Ошибка: нарушен баланс у узла " << node->data.key
-                      << " (balance = " << node->_balance << ")" << std::endl;
-            return false;
-        }
-
-        // Проверяем свойство BST
-        if (node->left != nullptr && static_cast<AVLNodePtr>(node->left)->data.key >= node->data.key) {
-            std::cout << "Ошибка: нарушено свойство BST (левый потомок больше)" << std::endl;
-            return false;
-        }
-        if (node->right != nullptr && static_cast<AVLNodePtr>(node->right)->data.key <= node->data.key) {
-            std::cout << "Ошибка: нарушено свойство BST (правый потомок меньше)" << std::endl;
-            return false;
-        }
-
-        return validateTree(static_cast<AVLNodePtr>(node->left), node) &&
-               validateTree(static_cast<AVLNodePtr>(node->right), node);
-    }
+    Node *_pFirst;
+    int _sz;
 
    public:
-    // Конструкторы
-    AVLTree() : BaseTree<T, H, AVLNode<T, H>>() {}
-
-    AVLTree(T key, H value) : BaseTree<T, H, AVLNode<T, H>>(key, value) {}
-
-    AVLTree(const AVLTree &other) : BaseTree<T, H, AVLNode<T, H>>(other) {}
-
-    AVLTree(std::vector<Pair> elements) : BaseTree<T, H, AVLNode<T, H>>(elements) {}
-
-    AVLTree(std::vector<T> elements) : BaseTree<T, H, AVLNode<T, H>>(elements) {}
-
-    // Деструктор
-    virtual ~AVLTree() {}
-
-    // Оператор присваивания
-    AVLTree &operator=(const AVLTree &other) {
-        if (this != &other) {
-            this->deleteNode(this->pFirst);
-            this->pFirst = this->copyNode(other.pFirst);
-            this->sz = other.sz;
+    Iterator begin() {
+        Node *current = _pFirst;
+        if (!current) return Iterator(nullptr);
+        while (current->left != nullptr) {
+            current = static_cast<Node *>(current->left);
         }
-        return *this;
+        return Iterator(current);
     }
 
-    // Вставка элемента
-    void Insert(T key, H value) override {
-        try {
-            this->pFirst = insertRec(static_cast<AVLNodePtr>(this->pFirst), key, value, nullptr);
-            this->sz++;
-        } catch (const std::exception &e) {
-            throw;  // Пробрасываем исключение дальше
+    Iterator end() {
+        Node *current = _pFirst;
+        if (!current) return Iterator(nullptr);
+        while (current->right != nullptr) {
+            current = static_cast<Node *>(current->right);
+        }
+        return Iterator(current);
+    }
+
+    AVLTree() : _pFirst(nullptr), _sz(0) {}
+
+    AVLTree(T key, H value) : _pFirst(new Node(Pair{key, value})), _sz(1) {}
+
+    AVLTree(const AVLTree &other) {
+        _pFirst = copyNode(other._pFirst);
+        _sz = other._sz;
+    }
+
+    AVLTree(vector<Pair> elements) {
+        sort(elements.begin(), elements.end());
+        _pFirst = nullptr;
+        _sz = 0;
+        for (const auto &elem : elements) {
+            Insert(elem.key, elem.value);
         }
     }
 
-    // Удаление элемента
+    AVLTree(vector<T> elements) {
+        sort(elements.begin(), elements.end());
+        _pFirst = nullptr;
+        _sz = 0;
+        for (const auto &key : elements) {
+            Insert(key, H{});
+        }
+    }
+
+    int count() override { return _sz; }
+
+    vector<T> keys() override {
+        vector<T> data;
+        this->RecTree(this->GetFirst(), data);
+        sort(data.begin(), data.end());
+        return data;
+    };
+
+    H *Find(T key) override {
+        Node *current = _pFirst;
+        while (current != nullptr) {
+            if (current->data.key == key) {
+                return &current->data.value;
+            }
+            if (current->data.key > key) {
+                current = static_cast<Node *>(current->left);
+            } else {
+                current = static_cast<Node *>(current->right);
+            }
+        }
+        return nullptr;
+    }
+
+    Node *FindNode(T key) {
+        Node *current = _pFirst;
+        while (current != nullptr) {
+            if (current->data.key == key) {
+                return current;
+            }
+            if (current->data.key > key) {
+                current = static_cast<Node *>(current->left);
+            } else {
+                current = static_cast<Node *>(current->right);
+            }
+        }
+        return nullptr;
+    }
+
     void Delete(T key) override {
-        if (this->Find(key) == nullptr) {
-            throw std::runtime_error("Ключ не найден");
+        Node *node = FindNode(key);
+        if (node == nullptr) return;
+
+        Node *parent = static_cast<Node *>(node->parent);
+        bool isRoot = (node == _pFirst);
+
+        // лист
+        if (node->left == nullptr && node->right == nullptr) {
+            if (isRoot) {
+                delete _pFirst;
+                _pFirst = nullptr;
+                _sz = 0;
+                return;
+            }
+
+            if (parent->left == node)
+                parent->left = nullptr;
+            else
+                parent->right = nullptr;
+
+            delete node;
+            _sz--;
+
+            Node *current = parent;
+            while (current != nullptr) {
+                Node *next = static_cast<Node *>(current->parent);
+                Rotate(current);
+                current = next;
+            }
+            return;
         }
 
-        this->pFirst = deleteRec(static_cast<AVLNodePtr>(this->pFirst), key);
-        this->sz--;
-    }
+        // один потомок
+        if (node->left == nullptr || node->right == nullptr) {
+            Node *child = static_cast<Node *>((node->left != nullptr) ? node->left : node->right);
 
-    // Получение баланса узла (для отладки)
-    int GetBalance(T key) {
-        AVLNodePtr node = this->FindNode(key);
-        if (node == nullptr) {
-            throw std::runtime_error("Ключ не найден");
+            if (isRoot) {
+                child->parent = nullptr;
+                delete _pFirst;
+                _pFirst = child;
+                _sz--;
+
+                Node *current = _pFirst;
+                while (current != nullptr) {
+                    Node *next = static_cast<Node *>(current->parent);
+                    Rotate(current);
+                    current = next;
+                }
+                return;
+            }
+
+            if (parent->left == node)
+                parent->left = child;
+            else
+                parent->right = child;
+            child->parent = parent;
+
+            delete node;
+            _sz--;
+
+            Node *current = parent;
+            while (current != nullptr) {
+                Node *next = static_cast<Node *>(current->parent);
+                Rotate(current);
+                current = next;
+            }
+            return;
         }
-        updateBalance(node);
-        return node->_balance;
+
+        // два потомка
+        Node *min = static_cast<Node *>(node->right);
+        while (min->left != nullptr) min = static_cast<Node *>(min->left);
+
+        swap_data(node, min);
+
+        Node *minParent = static_cast<Node *>(min->parent);
+
+        if (minParent->left == min)
+            minParent->left = min->right;
+        else
+            minParent->right = min->right;
+
+        if (min->right != nullptr) static_cast<Node *>(min->right)->parent = minParent;
+
+        delete min;
+        _sz--;
+
+        Node *current = minParent;
+        while (current != nullptr) {
+            Node *next = static_cast<Node *>(current->parent);
+            Rotate(current);
+            current = next;
+        }
     }
 
-    // Проверка корректности дерева (для отладки)
-    bool IsValid() { return validateTree(static_cast<AVLNodePtr>(this->pFirst)); }
+    void Insert(T key, H value) override {
+        _pFirst = _Insert(_pFirst, key, value, nullptr);
+        _sz++;
+    }
 
-    // Красивая печать с балансами
-    void printWithBalance(AVLNodePtr root, std::string indent = "", bool isLeft = true) {
+    H &operator[](T key) {
+        H *tmp = this->Find(key);
+        if (tmp == nullptr) {
+            this->Insert(key, H{});
+            return *this->Find(key);
+        }
+        return *tmp;
+    }
+
+    int Balance(Node *node) {
+        if (node == nullptr) return 0;
+
+        int leftHeight = GetHeight(static_cast<Node *>(node->left));
+        int rightHeight = GetHeight(static_cast<Node *>(node->right));
+
+        int balance = rightHeight - leftHeight;
+
+        node->_balance = balance;
+        return balance;
+    }
+
+    void Rotate(Node *node) {
+        if (node == nullptr) return;
+
+        if (Balance(node) == 2) {
+            Node *tmp = static_cast<Node *>(node->right);
+            if (tmp != nullptr) {
+                if (Balance(tmp) == 1) {
+                    node = RR(node);
+                } else if (Balance(tmp) == -1) {
+                    node = RL(node);
+                }
+            }
+        } else if (Balance(node) == -2) {
+            Node *tmp = static_cast<Node *>(node->left);
+            if (tmp != nullptr) {
+                if (Balance(tmp) == 1) {
+                    node = LR(node);
+                } else if (Balance(tmp) == -1) {
+                    node = LL(node);
+                }
+            }
+        }
+    }
+
+    void printTreeWithKey(Node *root = nullptr, std::string indent = "", bool isLeft = true) {
+        if (root == nullptr) root = _pFirst;
         if (root == nullptr) return;
 
-        if (root->right) {
-            printWithBalance(static_cast<AVLNodePtr>(root->right), indent + (isLeft ? "│   " : "    "),
-                             false);
+        if (static_cast<Node *>(root->right)) {
+            printTreeWithKey(static_cast<Node *>(root->right), indent + (isLeft ? "│   " : "    "), false);
         }
 
-        std::cout << indent << (isLeft ? "└── " : "┌── ");
-        updateBalance(const_cast<AVLNodePtr>(root));  // const_cast для обновления баланса
-        std::cout << "(" << root->data.key << "," << root->data.value << ",b=" << root->_balance << ")"
-                  << std::endl;
+        cout << indent << (isLeft ? "└── " : "┌── ") << "(" << root->data.key << "," << root->data.value
+             << "," << root->_balance << ")" << endl;
 
-        if (root->left) {
-            printWithBalance(static_cast<AVLNodePtr>(root->left), indent + (isLeft ? "    " : "│   "), true);
+        if (static_cast<Node *>(root->left)) {
+            printTreeWithKey(static_cast<Node *>(root->left), indent + (isLeft ? "    " : "│   "), true);
         }
+    }
+
+    Node *GetFirst() { return _pFirst; }
+
+    ~AVLTree() { deleteNode(_pFirst); }
+
+    bool isTrueSort() { return RecSearch(_pFirst, nullptr, nullptr); }
+
+   private:
+    void deleteNode(Node *current) {
+        if (current == nullptr) return;
+        deleteNode(static_cast<Node *>(current->left));
+        deleteNode(static_cast<Node *>(current->right));
+        delete current;
+    }
+
+    Node *copyNode(Node *node, Node *parent = nullptr) {
+        if (node == nullptr) return nullptr;
+
+        Node *new_node = new Node(node->data, nullptr, nullptr, parent, node->_balance);
+        new_node->left = copyNode(static_cast<Node *>(node->left), new_node);
+        new_node->right = copyNode(static_cast<Node *>(node->right), new_node);
+        return new_node;
+    }
+
+    bool RecSearch(Node *node, Node *minNode, Node *maxNode) {
+        if (node == nullptr) return true;
+        if (minNode != nullptr && node->data.key <= minNode->data.key) return false;
+        if (maxNode != nullptr && node->data.key >= maxNode->data.key) return false;
+        return RecSearch(static_cast<Node *>(node->left), minNode, node) &&
+               RecSearch(static_cast<Node *>(node->right), node, maxNode);
+    }
+
+    void swap_data(Node *first, Node *second) {
+        Pair tmp = first->data;
+        first->data = second->data;
+        second->data = tmp;
+    }
+
+    Node *LL(Node *node) {
+        if (node == nullptr || node->left == nullptr) return node;
+
+        Node *left_child = static_cast<Node *>(node->left);
+        Node *parent = static_cast<Node *>(node->parent);
+        Node *left_child_right = static_cast<Node *>(left_child->right);
+
+        // Поворот
+        node->left = left_child_right;
+        if (left_child_right != nullptr) {
+            left_child_right->parent = node;
+        }
+
+        left_child->right = node;
+        node->parent = left_child;
+
+        left_child->parent = parent;
+        if (parent != nullptr) {
+            if (parent->left == node) {
+                parent->left = left_child;
+            } else {
+                parent->right = left_child;
+            }
+        }
+
+        if (node == _pFirst) {
+            _pFirst = left_child;
+        }
+
+        Balance(node);
+        Balance(left_child);
+
+        return left_child;
+    }
+
+    Node *RR(Node *node) {
+        if (node == nullptr || node->right == nullptr) return node;
+
+        Node *right_child = static_cast<Node *>(node->right);
+        Node *parent = static_cast<Node *>(node->parent);
+
+        // Поворот
+        node->right = right_child->left;
+        if (right_child->left != nullptr) {
+            static_cast<Node *>(right_child->left)->parent = node;
+        }
+
+        right_child->left = node;
+        right_child->parent = parent;
+        node->parent = right_child;
+
+        if (parent != nullptr) {
+            if (parent->left == node) {
+                parent->left = right_child;
+            } else {
+                parent->right = right_child;
+            }
+        }
+
+        if (node == _pFirst) {
+            _pFirst = right_child;
+        }
+
+        Balance(node);
+        Balance(right_child);
+
+        return right_child;
+    }
+
+    Node *RL(Node *node) {
+        if (node == nullptr || node->right == nullptr) return node;
+
+        Node *right_child = static_cast<Node *>(node->right);
+        Node *rc_left_child = static_cast<Node *>(node->right->left);
+        Node *parent = static_cast<Node *>(node->parent);
+
+        if (rc_left_child == nullptr) return RR(node);
+
+        // Сохраняем поддеревья
+        Node *rclc_left = static_cast<Node *>(rc_left_child->left);
+        Node *rclc_right = static_cast<Node *>(rc_left_child->right);
+
+        // Перестраиваем связи
+        rc_left_child->left = node;
+        rc_left_child->right = right_child;
+        rc_left_child->parent = parent;
+
+        node->parent = rc_left_child;
+        node->right = rclc_left;
+        if (rclc_left) rclc_left->parent = node;
+
+        right_child->parent = rc_left_child;
+        right_child->left = rclc_right;
+        if (rclc_right) rclc_right->parent = right_child;
+
+        if (parent != nullptr) {
+            if (parent->left == node) {
+                parent->left = rc_left_child;
+            } else {
+                parent->right = rc_left_child;
+            }
+        }
+
+        if (node == _pFirst) {
+            _pFirst = rc_left_child;
+        }
+
+        Balance(node);
+        Balance(right_child);
+        Balance(rc_left_child);
+
+        return rc_left_child;
+    }
+
+    Node *LR(Node *node) {
+        if (node == nullptr || node->left == nullptr) return node;
+
+        Node *left_child = static_cast<Node *>(node->left);
+        Node *lc_right_child = static_cast<Node *>(node->left->right);
+        Node *parent = static_cast<Node *>(node->parent);
+
+        if (lc_right_child == nullptr) return LL(node);
+
+        // Сохраняем поддеревья
+        Node *lcrc_left = static_cast<Node *>(lc_right_child->left);
+        Node *lcrc_right = static_cast<Node *>(lc_right_child->right);
+
+        // Перестраиваем связи
+        lc_right_child->right = node;
+        lc_right_child->left = left_child;
+        lc_right_child->parent = parent;
+
+        node->parent = lc_right_child;
+        node->left = lcrc_right;
+        if (lcrc_right) lcrc_right->parent = node;
+
+        left_child->parent = lc_right_child;
+        left_child->right = lcrc_left;
+        if (lcrc_left) lcrc_left->parent = left_child;
+
+        if (parent != nullptr) {
+            if (parent->left == node) {
+                parent->left = lc_right_child;
+            } else {
+                parent->right = lc_right_child;
+            }
+        }
+
+        if (node == _pFirst) {
+            _pFirst = lc_right_child;
+        }
+
+        Balance(node);
+        Balance(left_child);
+        Balance(lc_right_child);
+
+        return lc_right_child;
+    }
+
+    Node *_Insert(Node *node, const T key, const H value, Node *parent) {
+        if (node == nullptr) {
+            return new Node(Pair{key, value}, nullptr, nullptr, parent, 0);
+        }
+
+        if (key < node->data.key) {
+            node->left = _Insert(static_cast<Node *>(node->left), key, value, node);
+        } else if (key > node->data.key) {
+            node->right = _Insert(static_cast<Node *>(node->right), key, value, node);
+        } else {
+            throw std::invalid_argument("Key already exists");
+        }
+
+        Balance(node);
+
+        if (Balance(node) == 2) {
+            if (Balance(static_cast<Node *>(node->right)) == 1) {
+                node = RR(node);
+            } else {
+                node = RL(node);
+            }
+        } else if (Balance(node) == -2) {
+            if (Balance(static_cast<Node *>(node->left)) == 1) {
+                node = LR(node);
+            } else {
+                node = LL(node);
+            }
+        }
+
+        return node;
+    }
+
+    int GetHeight(Node *node) {
+        if (node == nullptr) return 0;
+
+        int leftHeight = GetHeight(static_cast<Node *>(node->left));
+        int rightHeight = GetHeight(static_cast<Node *>(node->right));
+
+        return 1 + std::max(leftHeight, rightHeight);
     }
 };
 
