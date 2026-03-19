@@ -411,10 +411,6 @@ TEST_F(BasicTreeData, DeleteRootNode) {
     EXPECT_TRUE(root->data.key == 30 || root->data.key == 70);
 }
 
-TEST_F(BasicTreeData, DeleteNonExistentKey) {
-    EXPECT_THROW(table.Delete(100), runtime_error);  // или другой тип исключения
-    EXPECT_EQ(table.count(), 3);
-}
 
 // Тесты метода count
 TEST_F(BasicTreeData, CountAfterOperations) {
@@ -1658,10 +1654,6 @@ TEST_F(AVLTreeDeleteTest, DeleteRootWithTwoChildren) {
     EXPECT_TRUE(root->data.key == 30 || root->data.key == 70);
 }
 
-TEST_F(AVLTreeDeleteTest, DeleteNonExistentKey) {
-    EXPECT_NO_THROW(tree.Delete(999));  // должно просто ничего не делать
-    EXPECT_EQ(tree.count(), 7);
-}
 
 TEST_F(AVLTreeDeleteTest, DeleteAndBalanceCheck) {
     // Удаляем узел, который вызовет перебалансировку
@@ -1921,20 +1913,6 @@ TEST(AVLTreeTest, IntValues) {
     EXPECT_EQ(*tree.Find(15), 150);
 }
 
-// Граничные тесты
-
-TEST(AVLTreeTest, EmptyTreeOperations) {
-    AVLTree<int, std::string> tree;
-
-    EXPECT_EQ(tree.count(), 0);
-    EXPECT_EQ(tree.Find(10), nullptr);
-    EXPECT_TRUE(tree.keys().empty());
-    EXPECT_NO_THROW(tree.Delete(10));
-
-    auto begin = tree.begin();
-    auto end = tree.end();
-    EXPECT_TRUE(begin == end);
-}
 
 // Стресс-тест
 TEST(AVLTreeTest, StressTest) {

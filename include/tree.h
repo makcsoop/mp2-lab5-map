@@ -143,10 +143,10 @@ struct AVLNode : public BaseNode<T, H, AVLNode<T, H>> {
     AVLNode(const AVLNode &other, AVLNode *parent = nullptr)
         : Base(other.data, nullptr, nullptr, parent), _balance(other._balance) {
         if (other.left != nullptr) {
-            this->left = new AVLNode(*static_cast<const AVLNode>(other.left), this);
+            this->left = new AVLNode(*static_cast<const AVLNode *>(other.left), this);
         }
         if (other.right != nullptr) {
-            this->right = new AVLNode(*static_cast<const AVLNode>(other.right), this);
+            this->right = new AVLNode(*static_cast<const AVLNode *>(other.right), this);
         }
     }
 };
@@ -641,354 +641,343 @@ class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
     using typename Map<T, H>::Pair;
     using AVLNodePtr = AVLNode<T, H> *;
 
-   public:
-    using BaseTree<T, H, AVLNode<T, H>>::BaseTree;
-
-    void Delete(T key) {
-        AVLNodePtr node = this->FindNode(key);
+    // Вспомогательная функция для обновления родительских связей
+    void updateParent(AVLNodePtr node, AVLNodePtr newChild, AVLNodePtr oldChild) {
         if (node == nullptr) return;
 
-        AVLNodePtr parent = (node->parent);
-        bool isRoot = (node == this->pFirst);
-
-        // лист
-        if (node->left == nullptr && node->right == nullptr) {
-            if (isRoot) {
-                delete this->pFirst;
-                this->pFirst = nullptr;
-                this->sz = 0;
-                return;
-            }
-
-            if (parent->left == node)
-                parent->left = nullptr;
-            else
-                parent->right = nullptr;
-
-            delete node;
-            this->sz--;
-
-            AVLNodePtr current = parent;
-            while (current != nullptr) {
-                AVLNodePtr next = (current->parent);
-                this->Rotate(current);
-                current = next;
-            }
-            return;
+        if (node->left == oldChild) {
+            node->left = newChild;
+        } else if (node->right == oldChild) {
+            node->right = newChild;
         }
 
-        // один потомок
-        if (node->left == nullptr || node->right == nullptr) {
-            AVLNodePtr child = ((node->left != nullptr) ? node->left : node->right);
-
-            if (isRoot) {
-                child->parent = nullptr;
-                delete this->pFirst;
-                this->pFirst = child;
-                this->sz--;
-
-                AVLNodePtr current = this->pFirst;
-                while (current != nullptr) {
-                    AVLNodePtr next = (current->parent);
-                    this->Rotate(current);
-                    current = next;
-                }
-                return;
-            }
-
-            if (parent->left == node)
-                parent->left = child;
-            else
-                parent->right = child;
-            child->parent = parent;
-
-            delete node;
-            this->sz--;
-
-            AVLNodePtr current = parent;
-            while (current != nullptr) {
-                AVLNodePtr next = (current->parent);
-                this->Rotate(current);
-                current = next;
-            }
-            return;
-        }
-
-        // два потомка
-        AVLNodePtr min = (node->right);
-        while (min->left != nullptr) min = (min->left);
-
-        this->swap_data(node, min);
-
-        AVLNodePtr minParent = (min->parent);
-
-        if (minParent->left == min)
-            minParent->left = min->right;
-        else
-            minParent->right = min->right;
-
-        if (min->right != nullptr) min->right->parent = minParent;
-
-        delete min;
-        this->sz--;
-
-        AVLNodePtr current = minParent;
-        while (current != nullptr) {
-            AVLNodePtr next = (current->parent);
-            this->Rotate(current);
-            current = next;
+        if (newChild != nullptr) {
+            newChild->parent = node;
         }
     }
-    void Insert(T key, H value) override {
-        this->pFirst = this->_Insert(this->pFirst, key, value, nullptr);
-        this->sz++;
-    }
 
-    int Balance(AVLNodePtr node) {
+    // Получение высоты узла
+    int getHeight(AVLNodePtr node) {
         if (node == nullptr) return 0;
 
-        int leftHeight = this->GetHeight((node->left));
-        int rightHeight = this->GetHeight((node->right));
+        int leftHeight = getHeight(static_cast<AVLNodePtr>(node->left));
+        int rightHeight = getHeight(static_cast<AVLNodePtr>(node->right));
 
-        int balance = rightHeight - leftHeight;
-
-        node->_balance = balance;
-        return balance;
+        return 1 + std::max(leftHeight, rightHeight);
     }
 
-    void Rotate(AVLNodePtr node) {
-        if (this->Balance(node) == 2) {
-            AVLNodePtr tmp = (node->right);
-            if (tmp != nullptr) {
-                if (this->Balance(tmp) == 1) {
-                    node = RR(node);
-                } else if (this->Balance(tmp) == -1) {
-                    node = RL(node);
-                }
+    // Обновление баланса узла
+    void updateBalance(AVLNodePtr node) {
+        if (node == nullptr) return;
 
-                return;
-            }
-        } else if (this->Balance(node) == -2) {
-            AVLNodePtr tmp = (node->left);
-            if (tmp != nullptr) {
-                if (this->Balance(tmp) == 1) {
-                    node = LR(node);
-                } else if (this->Balance(tmp) == -1) {
-                    node = LL(node);
-                }
-                return;
-            }
-        }
+        int leftHeight = getHeight(static_cast<AVLNodePtr>(node->left));
+        int rightHeight = getHeight(static_cast<AVLNodePtr>(node->right));
 
-        return;
+        node->_balance = rightHeight - leftHeight;
     }
 
-   private:
-    void swap_data(AVLNodePtr first, AVLNodePtr second) {
-        Pair tmp = first->data;
-        first->data = second->data;
-        second->data = tmp;
-    };
+    // Правый поворот (LL)
+    AVLNodePtr rotateRight(AVLNodePtr y) {
+        if (y == nullptr || y->left == nullptr) return y;
 
-    void swap_pointer(AVLNodePtr node) {
-        AVLNodePtr tmp = (node->left);
-        node->left = (node->right);
-        node->right = tmp;
-    };
+        AVLNodePtr x = static_cast<AVLNodePtr>(y->left);
+        AVLNodePtr T2 = static_cast<AVLNodePtr>(x->right);
+        AVLNodePtr parent = static_cast<AVLNodePtr>(y->parent);
 
-    AVLNodePtr LL(AVLNodePtr node) {
-        if (node == nullptr || node->left == nullptr) return node;
+        // Выполняем поворот
+        x->right = y;
+        y->left = T2;
 
-        AVLNodePtr left_child = (node->left);
-        AVLNodePtr parent = (node->parent);
-        AVLNodePtr left_child_right = (left_child->right);
-
-        if (left_child == nullptr) return node;
-
-        node->left = left_child_right;
-        if (left_child_right != nullptr) {
-            left_child_right->parent = node;
+        // Обновляем родительские указатели
+        x->parent = parent;
+        y->parent = x;
+        if (T2 != nullptr) {
+            T2->parent = y;
         }
 
-        left_child->right = node;
-        node->parent = left_child;
-
-        left_child->parent = parent;
+        // Обновляем связь с родителем
         if (parent != nullptr) {
-            if (parent->left == node) {
-                parent->left = left_child;
+            if (parent->left == y) {
+                parent->left = x;
             } else {
-                parent->right = left_child;
+                parent->right = x;
             }
-        }
-        if (node == this->pFirst) {
-            this->pFirst = left_child;
-        }
-        this->Balance(node);
-        this->Balance(left_child);
-
-        return left_child;
-    }
-
-    AVLNodePtr RR(AVLNodePtr node) {
-        if (node == nullptr || node->right == nullptr) return node;
-
-        AVLNodePtr right_child = (node->right);
-        AVLNodePtr parent = (node->parent);
-
-        node->right = right_child->left;
-        if (right_child->left != nullptr) {
-            right_child->left->parent = node;
-        }
-
-        right_child->left = node;
-        right_child->parent = parent;
-        node->parent = right_child;
-
-        if (parent != nullptr) {
-            if (parent->left == node) {
-                parent->left = right_child;
-            } else {
-                parent->right = right_child;
-            }
-        }
-
-        if (node == this->pFirst) {
-            this->pFirst = right_child;
-        }
-
-        this->Balance(node);
-        this->Balance(right_child);
-
-        return right_child;
-    }
-
-    AVLNodePtr RL(AVLNodePtr node) {
-        if (node == nullptr || node->right == nullptr) return node;
-
-        AVLNodePtr right_child = (node->right);
-        AVLNodePtr rc_left_child = (node->right->left);
-
-        AVLNodePtr root = (node->parent);
-
-        AVLNodePtr rclc_left = (rc_left_child->left);
-
-        if (rc_left_child->right != nullptr) {
-            rc_left_child->right->parent = right_child;
-        }
-        right_child->left = rc_left_child->right;
-
-        rc_left_child->parent = root;
-        rc_left_child->right = right_child;
-
-        if (root != nullptr) {
-            if ((root->left) == node) {
-                root->left = rc_left_child;
-            } else {
-                root->right = rc_left_child;
-            }
-        } else if (node == this->pFirst) {
-            this->pFirst = rc_left_child;
-        }
-
-        if (rclc_left != nullptr) {
-            rclc_left->parent = node;
-        }
-        right_child->parent = rc_left_child;
-
-        rc_left_child->left = node;
-        node->parent = rc_left_child;
-
-        this->Balance(node);
-        this->Balance(right_child);
-        this->Balance(rc_left_child);
-
-        return rc_left_child;
-    }
-    AVLNodePtr LR(AVLNodePtr node) {
-        if (node == nullptr || node->left == nullptr) return node;
-
-        AVLNodePtr left_child = (node->left);
-        AVLNodePtr lc_right_child = (node->left->right);
-
-        if (lc_right_child == nullptr) return this->LL(node);
-
-        AVLNodePtr root = (node->parent);
-
-        AVLNodePtr lcrc_right = (lc_right_child->right);
-
-        if (lc_right_child->left != nullptr) {
-            lc_right_child->left->parent = left_child;
-        }
-        left_child->right = lc_right_child->left;
-
-        lc_right_child->parent = root;
-        lc_right_child->left = left_child;
-
-        if (root != nullptr) {
-            if ((root->left) == node) {
-                root->left = lc_right_child;
-            } else {
-                root->right = lc_right_child;
-            }
-        } else if (node == this->pFirst) {
-            this->pFirst = lc_right_child;
-        }
-
-        if (lcrc_right != nullptr) {
-            lcrc_right->parent = node;
-        }
-        left_child->parent = lc_right_child;
-
-        lc_right_child->right = node;
-        node->parent = lc_right_child;
-
-        this->Balance(node);
-        this->Balance(left_child);
-        this->Balance(lc_right_child);
-
-        return lc_right_child;
-    }
-
-    AVLNodePtr _Insert(AVLNodePtr node, const T key, const H value, AVLNodePtr parent) {
-        if (node == nullptr) {
-            return new AVLNode(Pair{key, value}, parent);
-        }
-        if (key < node->data.key) {
-            node->left = this->_Insert((node->left), key, value, node);
-
-        } else if (key > node->data.key) {
-            node->right = this->_Insert((node->right), key, value, node);
         } else {
-            throw invalid_argument("Error");
+            this->pFirst = x;
         }
 
-        if (this->Balance(node) == 2) {
-            if (this->Balance((node->right)) == 1) {
-                node = this->RR(node);
-            } else {
-                node = this->RL(node);
-            }
+        // Обновляем балансы
+        updateBalance(y);
+        updateBalance(x);
+
+        return x;
+    }
+
+    // Левый поворот (RR)
+    AVLNodePtr rotateLeft(AVLNodePtr x) {
+        if (x == nullptr || x->right == nullptr) return x;
+
+        AVLNodePtr y = static_cast<AVLNodePtr>(x->right);
+        AVLNodePtr T2 = static_cast<AVLNodePtr>(y->left);
+        AVLNodePtr parent = static_cast<AVLNodePtr>(x->parent);
+
+        // Выполняем поворот
+        y->left = x;
+        x->right = T2;
+
+        // Обновляем родительские указатели
+        y->parent = parent;
+        x->parent = y;
+        if (T2 != nullptr) {
+            T2->parent = x;
         }
-        if (this->Balance(node) == -2) {
-            if (this->Balance((node->left)) == 1) {
-                node = this->LR(node);
+
+        // Обновляем связь с родителем
+        if (parent != nullptr) {
+            if (parent->left == x) {
+                parent->left = y;
             } else {
-                node = this->LL(node);
+                parent->right = y;
             }
+        } else {
+            this->pFirst = y;
+        }
+
+        // Обновляем балансы
+        updateBalance(x);
+        updateBalance(y);
+
+        return y;
+    }
+
+    // Балансировка узла
+    AVLNodePtr balance(AVLNodePtr node) {
+        if (node == nullptr) return nullptr;
+
+        updateBalance(node);
+
+        // Если баланс нарушен
+        if (node->_balance > 1) {  // Правое поддерево тяжелее
+            AVLNodePtr rightChild = static_cast<AVLNodePtr>(node->right);
+            if (rightChild != nullptr && rightChild->_balance < 0) {
+                // RL случай
+                node->right = rotateRight(rightChild);
+            }
+            // RR случай
+            return rotateLeft(node);
+        }
+
+        if (node->_balance < -1) {  // Левое поддерево тяжелее
+            AVLNodePtr leftChild = static_cast<AVLNodePtr>(node->left);
+            if (leftChild != nullptr && leftChild->_balance > 0) {
+                // LR случай
+                node->left = rotateLeft(leftChild);
+            }
+            // LL случай
+            return rotateRight(node);
         }
 
         return node;
-    };
+    }
 
-    int GetHeight(AVLNodePtr node) {
-        if (node == nullptr) return 0;
+    // Рекурсивная вставка
+    AVLNodePtr insertRec(AVLNodePtr node, const T &key, const H &value, AVLNodePtr parent) {
+        if (node == nullptr) {
+            // Создаем новый узел с правильными указателями
+            AVLNode<T, H> *newNode = new AVLNode<T, H>(Pair{key, value},  // данные
+                                                       nullptr,           // левый потомок
+                                                       nullptr,           // правый потомок
+                                                       parent,            // родитель
+                                                       0                  // баланс
+            );
+            return newNode;
+        }
 
-        int leftHeight = this->GetHeight((node->left));
-        int rightHeight = this->GetHeight((node->right));
+        if (key < node->data.key) {
+            node->left = insertRec(static_cast<AVLNodePtr>(node->left), key, value, node);
+        } else if (key > node->data.key) {
+            node->right = insertRec(static_cast<AVLNodePtr>(node->right), key, value, node);
+        } else {
+            throw std::invalid_argument("Ключ уже существует");
+        }
 
-        return 1 + max(leftHeight, rightHeight);
-    };
+        // Балансируем узел после вставки
+        return balance(node);
+    }
+
+    // Поиск минимального узла в поддереве
+    AVLNodePtr findMin(AVLNodePtr node) {
+        if (node == nullptr) return nullptr;
+        while (node->left != nullptr) {
+            node = static_cast<AVLNodePtr>(node->left);
+        }
+        return node;
+    }
+
+    // Рекурсивное удаление
+    AVLNodePtr deleteRec(AVLNodePtr node, const T &key) {
+        if (node == nullptr) return nullptr;
+
+        // Поиск узла для удаления
+        if (key < node->data.key) {
+            node->left = deleteRec(static_cast<AVLNodePtr>(node->left), key);
+            if (node->left != nullptr) {
+                node->left->parent = node;
+            }
+        } else if (key > node->data.key) {
+            node->right = deleteRec(static_cast<AVLNodePtr>(node->right), key);
+            if (node->right != nullptr) {
+                node->right->parent = node;
+            }
+        } else {
+            // Узел найден - удаляем
+
+            // Случай 1: нет потомков
+            if (node->left == nullptr && node->right == nullptr) {
+                delete node;
+                return nullptr;
+            }
+
+            // Случай 2: один потомок
+            if (node->left == nullptr) {
+                AVLNodePtr temp = static_cast<AVLNodePtr>(node->right);
+                temp->parent = node->parent;
+                delete node;
+                return temp;
+            }
+            if (node->right == nullptr) {
+                AVLNodePtr temp = static_cast<AVLNodePtr>(node->left);
+                temp->parent = node->parent;
+                delete node;
+                return temp;
+            }
+
+            // Случай 3: два потомка
+            // Находим минимальный узел в правом поддереве
+            AVLNodePtr minNode = findMin(static_cast<AVLNodePtr>(node->right));
+
+            // Копируем данные
+            node->data = minNode->data;
+
+            // Удаляем минимальный узел
+            node->right = deleteRec(static_cast<AVLNodePtr>(node->right), minNode->data.key);
+            if (node->right != nullptr) {
+                node->right->parent = node;
+            }
+        }
+
+        // Балансируем узел после удаления
+        return balance(node);
+    }
+
+    // Валидация дерева (для отладки)
+    bool validateTree(AVLNodePtr node, AVLNodePtr parent = nullptr) {
+        if (node == nullptr) return true;
+
+        // Проверяем родительскую связь
+        if (node->parent != parent) {
+            std::cout << "Ошибка: неверный родитель у узла " << node->data.key << std::endl;
+            return false;
+        }
+
+        // Проверяем баланс
+        updateBalance(node);
+        if (node->_balance < -1 || node->_balance > 1) {
+            std::cout << "Ошибка: нарушен баланс у узла " << node->data.key
+                      << " (balance = " << node->_balance << ")" << std::endl;
+            return false;
+        }
+
+        // Проверяем свойство BST
+        if (node->left != nullptr && static_cast<AVLNodePtr>(node->left)->data.key >= node->data.key) {
+            std::cout << "Ошибка: нарушено свойство BST (левый потомок больше)" << std::endl;
+            return false;
+        }
+        if (node->right != nullptr && static_cast<AVLNodePtr>(node->right)->data.key <= node->data.key) {
+            std::cout << "Ошибка: нарушено свойство BST (правый потомок меньше)" << std::endl;
+            return false;
+        }
+
+        return validateTree(static_cast<AVLNodePtr>(node->left), node) &&
+               validateTree(static_cast<AVLNodePtr>(node->right), node);
+    }
+
+   public:
+    // Конструкторы
+    AVLTree() : BaseTree<T, H, AVLNode<T, H>>() {}
+
+    AVLTree(T key, H value) : BaseTree<T, H, AVLNode<T, H>>(key, value) {}
+
+    AVLTree(const AVLTree &other) : BaseTree<T, H, AVLNode<T, H>>(other) {}
+
+    AVLTree(std::vector<Pair> elements) : BaseTree<T, H, AVLNode<T, H>>(elements) {}
+
+    AVLTree(std::vector<T> elements) : BaseTree<T, H, AVLNode<T, H>>(elements) {}
+
+    // Деструктор
+    virtual ~AVLTree() {}
+
+    // Оператор присваивания
+    AVLTree &operator=(const AVLTree &other) {
+        if (this != &other) {
+            this->deleteNode(this->pFirst);
+            this->pFirst = this->copyNode(other.pFirst);
+            this->sz = other.sz;
+        }
+        return *this;
+    }
+
+    // Вставка элемента
+    void Insert(T key, H value) override {
+        try {
+            this->pFirst = insertRec(static_cast<AVLNodePtr>(this->pFirst), key, value, nullptr);
+            this->sz++;
+        } catch (const std::exception &e) {
+            throw;  // Пробрасываем исключение дальше
+        }
+    }
+
+    // Удаление элемента
+    void Delete(T key) override {
+        if (this->Find(key) == nullptr) {
+            throw std::runtime_error("Ключ не найден");
+        }
+
+        this->pFirst = deleteRec(static_cast<AVLNodePtr>(this->pFirst), key);
+        this->sz--;
+    }
+
+    // Получение баланса узла (для отладки)
+    int GetBalance(T key) {
+        AVLNodePtr node = this->FindNode(key);
+        if (node == nullptr) {
+            throw std::runtime_error("Ключ не найден");
+        }
+        updateBalance(node);
+        return node->_balance;
+    }
+
+    // Проверка корректности дерева (для отладки)
+    bool IsValid() { return validateTree(static_cast<AVLNodePtr>(this->pFirst)); }
+
+    // Красивая печать с балансами
+    void printWithBalance(AVLNodePtr root, std::string indent = "", bool isLeft = true) {
+        if (root == nullptr) return;
+
+        if (root->right) {
+            printWithBalance(static_cast<AVLNodePtr>(root->right), indent + (isLeft ? "│   " : "    "),
+                             false);
+        }
+
+        std::cout << indent << (isLeft ? "└── " : "┌── ");
+        updateBalance(const_cast<AVLNodePtr>(root));  // const_cast для обновления баланса
+        std::cout << "(" << root->data.key << "," << root->data.value << ",b=" << root->_balance << ")"
+                  << std::endl;
+
+        if (root->left) {
+            printWithBalance(static_cast<AVLNodePtr>(root->left), indent + (isLeft ? "    " : "│   "), true);
+        }
+    }
 };
 
 template <typename T, typename H>
