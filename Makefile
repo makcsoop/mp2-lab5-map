@@ -39,6 +39,20 @@ test_tree:
 		-pthread
 		# -o test_map
 
+test_hash:
+	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp
+	$(CC) $(CFLAGS) \
+		$(src)/map.cpp \
+		$(src)/HashTable.cpp \
+		$(test)/test_hashTable.cpp \
+		$(GTEST_DIR)/src/gtest-all.cc \
+		$(GTEST_DIR)/src/gtest_main.cc \
+		-Iinclude \
+		-I$(GTEST_DIR) \
+		-I$(GTEST_DIR)/include \
+		-pthread
+
+
 map:
 	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp $(test)/*
 	$(CC) $(CFLAGS) $(src)/map.cpp $(src)/tree.cpp $(samples)/main_map.cpp -Iinclude -o map
@@ -46,6 +60,10 @@ map:
 tree: clean
 	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp $(test)/*
 	$(CC) $(CFLAGS) $(src)/map.cpp $(src)/tree.cpp $(samples)/main_tree.cpp -Iinclude -o tree
+
+hash: clean
+	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp $(test)/*
+	$(CC) $(CFLAGS) $(src)/map.cpp $(samples)/main_hashTable.cpp -Iinclude -o hash
 
 map_rebuild:
 	rm -f map test_map a.out
