@@ -13,8 +13,8 @@ struct TreeIterator {
     using iterator_category = std::forward_iterator_tag;
     using difference_type = std::ptrdiff_t;
     using value_type = TypeNode;
-    using pointer = TypeNode *;    // or also value_type*
-    using reference = TypeNode &;  // or also value_type&
+    using pointer = TypeNode *;
+    using reference = TypeNode &;
 
     TreeIterator(pointer ptr) : m_ptr(ptr) {}
     reference operator*() const { return *m_ptr; }
@@ -28,7 +28,6 @@ struct TreeIterator {
             while (current->left != nullptr) {
                 current = static_cast<TypeNode *>(current->left);
             }
-
         } else {
             do {
                 current = static_cast<TypeNode *>(current->parent);
@@ -65,7 +64,6 @@ struct TreeIterator {
             while (current->right != nullptr) {
                 current = current->right;
             }
-
         } else {
             do {
                 current = current->parent;
@@ -169,30 +167,44 @@ class BaseTree : public Map<T, H> {
 
    public:
     using Iterator = TreeIterator<BaseNode>;
+
     Iterator begin() {
         BaseNode *current = pFirst;
+        if (!current) return Iterator(nullptr);
         while (current->left != nullptr) {
             current = current->left;
         }
-
         return Iterator(current);
     }
+
     Iterator end() {
         BaseNode *current = pFirst;
+        if (!current) return Iterator(nullptr);
         while (current->right != nullptr) {
             current = current->right;
         }
-
         return Iterator(current);
     }
 
-    BaseTree() : pFirst(nullptr) {}
+    BaseTree() : pFirst(nullptr), sz(0) {}
 
-    BaseTree(T key, H value) : pFirst(new BaseNode(Pair{key, value}, nullptr, nullptr, nullptr)) {}
+    BaseTree(T key, H value) : pFirst(new BaseNode(Pair{key, value}, nullptr, nullptr, nullptr)), sz(1) {}
 
-    BaseTree(const BaseTree<T, H, BaseNode> &root) {
-        pFirst = copyNode(root.pFirst);
-        sz = root.sz;
+    BaseTree(const BaseTree<T, H, BaseNode> &other) : pFirst(nullptr), sz(0) {
+        pFirst = copyNode(other.pFirst);
+        sz = other.sz;
+    }
+
+    // ОПЕРАТОР ПРИСВАИВАНИЯ - ИСПРАВЛЕНО
+    BaseTree &operator=(const BaseTree<T, H, BaseNode> &other) {
+        if (this != &other) {
+            // Очищаем текущее дерево
+            deleteNode(pFirst);
+            // Копируем новое
+            pFirst = copyNode(other.pFirst);
+            sz = other.sz;
+        }
+        return *this;
     }
 
     BaseTree(vector<Pair> elements) {
@@ -200,6 +212,7 @@ class BaseTree : public Map<T, H> {
         sort(elements.begin(), elements.end());
         int plug = 0;
         pFirst = nullptr;
+        sz = 0;
         while (elements.size() != 0) {
             if (plug % 3 == 0) {
                 this->Insert(elements[elements.size() / 2].key, elements[elements.size() / 2].value);
@@ -220,6 +233,7 @@ class BaseTree : public Map<T, H> {
         sort(elements.begin(), elements.end());
         int plug = 0;
         pFirst = nullptr;
+        sz = 0;
         while (elements.size() != 0) {
             if (plug % 3 == 0) {
                 Insert(elements[elements.size() / 2], H{});
@@ -346,7 +360,7 @@ class BaseTree : public Map<T, H> {
         if (!node) {
             throw runtime_error("Нет ключа");
         }
-        if (node->left == nullptr && node->right == nullptr) {  // удаление листа
+        if (node->left == nullptr && node->right == nullptr) {
             if (node == pFirst) {
                 delete pFirst;
                 pFirst = nullptr;
@@ -361,8 +375,7 @@ class BaseTree : public Map<T, H> {
             }
             delete node;
             sz--;
-
-        } else if (((node->left == nullptr) + (node->right == nullptr)) == 1) {  // один потомок
+        } else if (((node->left == nullptr) + (node->right == nullptr)) == 1) {
             BaseNode *child = (node->left != nullptr) ? node->left : node->right;
             if (node == pFirst) {
                 child->parent = nullptr;
@@ -380,7 +393,7 @@ class BaseTree : public Map<T, H> {
             child->parent = parent;
             delete node;
             sz--;
-        } else {  // 2 потомка
+        } else {
             if (node == pFirst) {
                 BaseNode *minNode = node->right;
                 while (minNode->left != nullptr) {
@@ -410,25 +423,23 @@ class BaseTree : public Map<T, H> {
                 } else {
                     minParent->right = minNode->right;
                 }
-
                 if (minNode->right) {
                     minNode->right->parent = minParent;
                 }
-
                 delete minNode;
                 sz--;
             }
         }
     }
 
-    int count() { return sz; };
+    int count() { return sz; }
 
     vector<T> keys() {
         vector<T> data;
         RecTree(GetFirst(), data);
         sort(data.begin(), data.end());
         return data;
-    };
+    }
 
     void RecTree(const BaseNode *node, vector<T> &keys) {
         if (node == nullptr) return;
@@ -492,7 +503,8 @@ class Tree : public BaseTree<T, H, Node<T, H>> {
 
    public:
     using BaseTree<T, H, Node<T, H>>::BaseTree;
-    void Insert(T key, H value) {
+
+    void Insert(T key, H value) override {
         if (this->pFirst == nullptr) {
             this->pFirst = new Node<T, H>{Pair{key, value}, nullptr, nullptr, nullptr};
             this->sz++;
@@ -524,42 +536,12 @@ class Tree : public BaseTree<T, H, Node<T, H>> {
         }
     }
 
-    void InsertNode(Node<T, H> *current) {
-        if (this->pFirst == nullptr) {
-            this->pFirst = current;
-            this->sz++;
-        } else {
-            Node<T, H> *tmp = this->pFirst;
-            while (true) {
-                if (tmp->data.key > current->data.key) {
-                    if (tmp->left != nullptr) {
-                        tmp = tmp->left;
-                    } else {
-                        tmp->left = current;
-                        this->sz++;
-                        break;
-                    }
-                } else if (tmp->data.key < current->data.key) {
-                    if (tmp->right != nullptr) {
-                        tmp = tmp->right;
-                    } else {
-                        tmp->right = current;
-                        this->sz++;
-                        break;
-                    }
-                } else {
-                    throw invalid_argument("Incorrect insert");
-                }
-            }
-        }
-    }
-
-    virtual void Delete(T key) {
+    void Delete(T key) override {
         Node<T, H> *node = this->FindNode(key);
         if (!node) {
             throw runtime_error("Нет ключа");
         }
-        if (node->left == nullptr && node->right == nullptr) {  // удаление листа
+        if (node->left == nullptr && node->right == nullptr) {
             if (node == this->pFirst) {
                 delete this->pFirst;
                 this->pFirst = nullptr;
@@ -574,8 +556,7 @@ class Tree : public BaseTree<T, H, Node<T, H>> {
             }
             delete node;
             this->sz--;
-
-        } else if (((node->left == nullptr) + (node->right == nullptr)) == 1) {  // один потомок
+        } else if (((node->left == nullptr) + (node->right == nullptr)) == 1) {
             Node<T, H> *child = (node->left != nullptr) ? node->left : node->right;
             if (node == this->pFirst) {
                 child->parent = nullptr;
@@ -593,7 +574,7 @@ class Tree : public BaseTree<T, H, Node<T, H>> {
             child->parent = parent;
             delete node;
             this->sz--;
-        } else {  // 2 потомка
+        } else {
             if (node == this->pFirst) {
                 Node<T, H> *minNode = node->right;
                 while (minNode->left != nullptr) {
@@ -623,11 +604,9 @@ class Tree : public BaseTree<T, H, Node<T, H>> {
                 } else {
                     minParent->right = minNode->right;
                 }
-
                 if (minNode->right) {
                     minNode->right->parent = minParent;
                 }
-
                 delete minNode;
                 this->sz--;
             }
@@ -673,6 +652,15 @@ class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
         _sz = other._sz;
     }
 
+    AVLTree &operator=(const AVLTree &other) {
+        if (this != &other) {
+            deleteNode(_pFirst);
+            _pFirst = copyNode(other._pFirst);
+            _sz = other._sz;
+        }
+        return *this;
+    }
+
     AVLTree(vector<Pair> elements) {
         sort(elements.begin(), elements.end());
         _pFirst = nullptr;
@@ -698,7 +686,7 @@ class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
         this->RecTree(this->GetFirst(), data);
         sort(data.begin(), data.end());
         return data;
-    };
+    }
 
     H *Find(T key) override {
         Node *current = _pFirst;
@@ -737,7 +725,6 @@ class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
         Node *parent = static_cast<Node *>(node->parent);
         bool isRoot = (node == _pFirst);
 
-        // лист
         if (node->left == nullptr && node->right == nullptr) {
             if (isRoot) {
                 delete _pFirst;
@@ -745,15 +732,12 @@ class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
                 _sz = 0;
                 return;
             }
-
             if (parent->left == node)
                 parent->left = nullptr;
             else
                 parent->right = nullptr;
-
             delete node;
             _sz--;
-
             Node *current = parent;
             while (current != nullptr) {
                 Node *next = static_cast<Node *>(current->parent);
@@ -763,16 +747,13 @@ class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
             return;
         }
 
-        // один потомок
         if (node->left == nullptr || node->right == nullptr) {
             Node *child = static_cast<Node *>((node->left != nullptr) ? node->left : node->right);
-
             if (isRoot) {
                 child->parent = nullptr;
                 delete _pFirst;
                 _pFirst = child;
                 _sz--;
-
                 Node *current = _pFirst;
                 while (current != nullptr) {
                     Node *next = static_cast<Node *>(current->parent);
@@ -781,16 +762,13 @@ class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
                 }
                 return;
             }
-
             if (parent->left == node)
                 parent->left = child;
             else
                 parent->right = child;
             child->parent = parent;
-
             delete node;
             _sz--;
-
             Node *current = parent;
             while (current != nullptr) {
                 Node *next = static_cast<Node *>(current->parent);
@@ -800,24 +778,17 @@ class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
             return;
         }
 
-        // два потомка
         Node *min = static_cast<Node *>(node->right);
         while (min->left != nullptr) min = static_cast<Node *>(min->left);
-
         swap_data(node, min);
-
         Node *minParent = static_cast<Node *>(min->parent);
-
         if (minParent->left == min)
             minParent->left = min->right;
         else
             minParent->right = min->right;
-
         if (min->right != nullptr) static_cast<Node *>(min->right)->parent = minParent;
-
         delete min;
         _sz--;
-
         Node *current = minParent;
         while (current != nullptr) {
             Node *next = static_cast<Node *>(current->parent);
@@ -842,19 +813,15 @@ class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
 
     int Balance(Node *node) {
         if (node == nullptr) return 0;
-
         int leftHeight = GetHeight(static_cast<Node *>(node->left));
         int rightHeight = GetHeight(static_cast<Node *>(node->right));
-
         int balance = rightHeight - leftHeight;
-
         node->_balance = balance;
         return balance;
     }
 
     void Rotate(Node *node) {
         if (node == nullptr) return;
-
         if (Balance(node) == 2) {
             Node *tmp = static_cast<Node *>(node->right);
             if (tmp != nullptr) {
@@ -879,14 +846,11 @@ class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
     void printTreeWithKey(Node *root = nullptr, std::string indent = "", bool isLeft = true) {
         if (root == nullptr) root = _pFirst;
         if (root == nullptr) return;
-
         if (static_cast<Node *>(root->right)) {
             printTreeWithKey(static_cast<Node *>(root->right), indent + (isLeft ? "│   " : "    "), false);
         }
-
         cout << indent << (isLeft ? "└── " : "┌── ") << "(" << root->data.key << "," << root->data.value
              << "," << root->_balance << ")" << endl;
-
         if (static_cast<Node *>(root->left)) {
             printTreeWithKey(static_cast<Node *>(root->left), indent + (isLeft ? "    " : "│   "), true);
         }
@@ -908,7 +872,6 @@ class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
 
     Node *copyNode(Node *node, Node *parent = nullptr) {
         if (node == nullptr) return nullptr;
-
         Node *new_node = new Node(node->data, nullptr, nullptr, parent, node->_balance);
         new_node->left = copyNode(static_cast<Node *>(node->left), new_node);
         new_node->right = copyNode(static_cast<Node *>(node->right), new_node);
@@ -931,20 +894,15 @@ class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
 
     Node *LL(Node *node) {
         if (node == nullptr || node->left == nullptr) return node;
-
         Node *left_child = static_cast<Node *>(node->left);
         Node *parent = static_cast<Node *>(node->parent);
         Node *left_child_right = static_cast<Node *>(left_child->right);
-
-        // Поворот
         node->left = left_child_right;
         if (left_child_right != nullptr) {
             left_child_right->parent = node;
         }
-
         left_child->right = node;
         node->parent = left_child;
-
         left_child->parent = parent;
         if (parent != nullptr) {
             if (parent->left == node) {
@@ -953,33 +911,25 @@ class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
                 parent->right = left_child;
             }
         }
-
         if (node == _pFirst) {
             _pFirst = left_child;
         }
-
         Balance(node);
         Balance(left_child);
-
         return left_child;
     }
 
     Node *RR(Node *node) {
         if (node == nullptr || node->right == nullptr) return node;
-
         Node *right_child = static_cast<Node *>(node->right);
         Node *parent = static_cast<Node *>(node->parent);
-
-        // Поворот
         node->right = right_child->left;
         if (right_child->left != nullptr) {
             static_cast<Node *>(right_child->left)->parent = node;
         }
-
         right_child->left = node;
         right_child->parent = parent;
         node->parent = right_child;
-
         if (parent != nullptr) {
             if (parent->left == node) {
                 parent->left = right_child;
@@ -987,43 +937,31 @@ class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
                 parent->right = right_child;
             }
         }
-
         if (node == _pFirst) {
             _pFirst = right_child;
         }
-
         Balance(node);
         Balance(right_child);
-
         return right_child;
     }
 
     Node *RL(Node *node) {
         if (node == nullptr || node->right == nullptr) return node;
-
         Node *right_child = static_cast<Node *>(node->right);
         Node *rc_left_child = static_cast<Node *>(node->right->left);
         Node *parent = static_cast<Node *>(node->parent);
-
         if (rc_left_child == nullptr) return RR(node);
-
-        // Сохраняем поддеревья
         Node *rclc_left = static_cast<Node *>(rc_left_child->left);
         Node *rclc_right = static_cast<Node *>(rc_left_child->right);
-
-        // Перестраиваем связи
         rc_left_child->left = node;
         rc_left_child->right = right_child;
         rc_left_child->parent = parent;
-
         node->parent = rc_left_child;
         node->right = rclc_left;
         if (rclc_left) rclc_left->parent = node;
-
         right_child->parent = rc_left_child;
         right_child->left = rclc_right;
         if (rclc_right) rclc_right->parent = right_child;
-
         if (parent != nullptr) {
             if (parent->left == node) {
                 parent->left = rc_left_child;
@@ -1031,44 +969,32 @@ class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
                 parent->right = rc_left_child;
             }
         }
-
         if (node == _pFirst) {
             _pFirst = rc_left_child;
         }
-
         Balance(node);
         Balance(right_child);
         Balance(rc_left_child);
-
         return rc_left_child;
     }
 
     Node *LR(Node *node) {
         if (node == nullptr || node->left == nullptr) return node;
-
         Node *left_child = static_cast<Node *>(node->left);
         Node *lc_right_child = static_cast<Node *>(node->left->right);
         Node *parent = static_cast<Node *>(node->parent);
-
         if (lc_right_child == nullptr) return LL(node);
-
-        // Сохраняем поддеревья
         Node *lcrc_left = static_cast<Node *>(lc_right_child->left);
         Node *lcrc_right = static_cast<Node *>(lc_right_child->right);
-
-        // Перестраиваем связи
         lc_right_child->right = node;
         lc_right_child->left = left_child;
         lc_right_child->parent = parent;
-
         node->parent = lc_right_child;
         node->left = lcrc_right;
         if (lcrc_right) lcrc_right->parent = node;
-
         left_child->parent = lc_right_child;
         left_child->right = lcrc_left;
         if (lcrc_left) lcrc_left->parent = left_child;
-
         if (parent != nullptr) {
             if (parent->left == node) {
                 parent->left = lc_right_child;
@@ -1076,15 +1002,12 @@ class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
                 parent->right = lc_right_child;
             }
         }
-
         if (node == _pFirst) {
             _pFirst = lc_right_child;
         }
-
         Balance(node);
         Balance(left_child);
         Balance(lc_right_child);
-
         return lc_right_child;
     }
 
@@ -1092,7 +1015,6 @@ class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
         if (node == nullptr) {
             return new Node(Pair{key, value}, nullptr, nullptr, parent, 0);
         }
-
         if (key < node->data.key) {
             node->left = _Insert(static_cast<Node *>(node->left), key, value, node);
         } else if (key > node->data.key) {
@@ -1100,9 +1022,7 @@ class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
         } else {
             throw std::invalid_argument("Key already exists");
         }
-
         Balance(node);
-
         if (Balance(node) == 2) {
             if (Balance(static_cast<Node *>(node->right)) == 1) {
                 node = RR(node);
@@ -1116,20 +1036,18 @@ class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
                 node = LL(node);
             }
         }
-
         return node;
     }
 
     int GetHeight(Node *node) {
         if (node == nullptr) return 0;
-
         int leftHeight = GetHeight(static_cast<Node *>(node->left));
         int rightHeight = GetHeight(static_cast<Node *>(node->right));
-
         return 1 + std::max(leftHeight, rightHeight);
     }
 };
 
+// ПОЛНОСТЬЮ ИСПРАВЛЕННЫЙ REDBLACKTREE
 template <typename T, typename H>
 class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
    protected:
@@ -1138,11 +1056,28 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
 
    public:
     using BaseTree<T, H, RBNode<T, H>>::BaseTree;
+
+    // КОНСТРУКТОР ПО УМОЛЧАНИЮ
+    RedBlackTree() : BaseTree<T, H, RBNode<T, H>>() {}
+
+    // КОНСТРУКТОР КОПИРОВАНИЯ
+    RedBlackTree(const RedBlackTree &other) : BaseTree<T, H, RBNode<T, H>>(other) {}
+
+    // ОПЕРАТОР ПРИСВАИВАНИЯ
+    RedBlackTree &operator=(const RedBlackTree &other) {
+        if (this != &other) {
+            BaseTree<T, H, RBNode<T, H>>::operator=(other);
+        }
+        return *this;
+    }
+
+    // Конструктор от вектора
     RedBlackTree(vector<T> elements) {
-        logger("Base const vector<T>", 1);
+        logger("RedBlackTree const vector<T>", 1);
         sort(elements.begin(), elements.end());
         int plug = 0;
         this->pFirst = nullptr;
+        this->sz = 0;
         while (elements.size() != 0) {
             if (plug % 3 == 0) {
                 this->Insert(elements[elements.size() / 2], H{});
@@ -1159,17 +1094,12 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
     }
 
     void Insert(T key, H value) override {
-        // logger("Insert RBT", 1);
         BaseTree<T, H, RBNode<T, H>>::Insert(key, value);
         RBNodePtr needNode = this->FindNode(key);
         if (needNode != nullptr) {
-            // logger("Correct insert", 1);
-            //  this->printTree(this->GetFirst());
             this->Balance(needNode);
-            // logger("Correct Balance", 1);
-            //  this->printTree(this->GetFirst());
         } else {
-            throw invalid_argument("Inccorrect insert");
+            throw invalid_argument("Incorrect insert");
         }
     }
 
@@ -1183,35 +1113,21 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
                 }
                 RBNodePtr uncle;
                 if (parentNode == parentNode->parent->left) {
-                    //("uncle right", 1);
                     uncle = childNode->parent->parent->right;
                 } else {
-                    // logger("uncle left", 1);
                     uncle = childNode->parent->parent->left;
                 }
-                if (uncle != nullptr) {
-                    // logger(to_string(childNode->data.key) + " uncle:" + to_string(uncle->data.key), 1);
-                }
-
                 if (uncle == nullptr || uncle->color == 'b') {
-                    if (parentNode == parentNode->parent->left && childNode == parentNode->left) {  // LL
-                        // logger("LL", 1);
+                    if (parentNode == parentNode->parent->left && childNode == parentNode->left) {
                         this->LL(childNode);
-                    } else if (parentNode == parentNode->parent->left &&
-                               childNode == parentNode->right) {  // LR
-                        // logger("LR", 1);
+                    } else if (parentNode == parentNode->parent->left && childNode == parentNode->right) {
                         this->LR(childNode);
-                    } else if (parentNode == parentNode->parent->right &&
-                               childNode == parentNode->right) {  // RR
-                        // logger("RR", 1);
+                    } else if (parentNode == parentNode->parent->right && childNode == parentNode->right) {
                         this->RR(childNode);
                     } else {
-                        // logger("RL", 1);  // RL
                         this->RL(childNode);
                     }
-
                 } else {
-                    // logger("No route", 1);
                     uncle->color = 'b';
                     parentNode->color = 'b';
                     parentNode->parent->color = 'r';
@@ -1225,7 +1141,7 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
 
     void LL(RBNodePtr childNode) {
         RBNodePtr parentNode = childNode->parent;
-        RBNodePtr childRihgt = parentNode->right;
+        RBNodePtr childRight = parentNode->right;
         RBNodePtr grandpa = parentNode->parent;
         RBNodePtr root = grandpa->parent;
         if (root == nullptr) {
@@ -1242,8 +1158,9 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
         parentNode->color = 'b';
         parentNode->right = grandpa;
         grandpa->parent = parentNode;
-        grandpa->left = childRihgt;
+        grandpa->left = childRight;
         grandpa->color = 'r';
+        if (childRight) childRight->parent = grandpa;
         Balance(parentNode);
     }
 
@@ -1255,7 +1172,6 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
         childNode->left = parentNode;
         parentNode->right = nullptr;
         parentNode->parent = childNode;
-        // this->printTree(this->GetFirst());
         this->LL(parentNode);
     }
 
@@ -1280,6 +1196,7 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
         grandpa->parent = parentNode;
         grandpa->right = childLeft;
         grandpa->color = 'r';
+        if (childLeft) childLeft->parent = grandpa;
         Balance(parentNode);
     }
 
@@ -1307,13 +1224,12 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
     }
 
     void Delete(T key) override {
-        // logger("Delete RBT " + to_string(key), 1);
         RBNodePtr node = this->FindNode(key);
         if (!node) {
             throw runtime_error("Нет ключа");
         }
+
         if (node->left != nullptr && node->right != nullptr) {
-            // logger("Node two children", 1);
             RBNodePtr successor = node->right;
             while (successor->left != nullptr) {
                 successor = successor->left;
@@ -1323,12 +1239,10 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
             Delete(successorKey);
             node->data.key = successorKey;
             node->data.value = successorValue;
-
             return;
         }
 
         if (node->color == 'r' && node->left == nullptr && node->right == nullptr) {
-            // logger("Red Node 0 child", 1);
             RBNodePtr parent = node->parent;
             if (parent != nullptr) {
                 if (parent->left == node) {
@@ -1343,7 +1257,6 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
         }
 
         if (node->color == 'b' && ((node->left != nullptr) ^ (node->right != nullptr)) == 1) {
-            // logger("Black one red child", 1);
             RBNodePtr child = (node->left != nullptr) ? node->left : node->right;
             if (node->parent == nullptr) {
                 this->pFirst = child;
@@ -1363,94 +1276,90 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
         }
 
         if (node->color == 'b' && node->left == nullptr && node->right == nullptr) {
-            // logger("Black Node", 1);
             if (node == this->pFirst) {
                 delete node;
                 this->pFirst = nullptr;
                 this->sz = 0;
                 return;
             }
-            fixDoubleBlack(node);
-            if (node->parent != nullptr) {
-                if (node->parent->left == node) {
-                    node->parent->left = nullptr;
-                } else {
-                    node->parent->right = nullptr;
-                }
-            }
 
+            RBNodePtr parent = node->parent;
+            bool isLeft = (parent->left == node);
+
+            fixDoubleBlack(node);
+
+            if (isLeft) {
+                parent->left = nullptr;
+            } else {
+                parent->right = nullptr;
+            }
             delete node;
             this->sz--;
             return;
         }
     }
+
     void fixDoubleBlack(RBNodePtr node) {
         if (node == nullptr || node == this->pFirst) return;
-        RBNodePtr parent = node->parent;
-        if (parent == nullptr) return;
-        RBNodePtr brouther;
-        if (parent->left == node) {
-            brouther = parent->right;
-        } else {
-            brouther = parent->left;
-        }
-        if (brouther == nullptr) return;
+        if (node->parent == nullptr) return;
 
-        // 2A: Красный брат
-        if (brouther->color == 'r') {
-            // logger("2A Red brouther", 1);
+        RBNodePtr parent = node->parent;
+        RBNodePtr brother;
+        if (parent->left == node) {
+            brother = parent->right;
+        } else {
+            brother = parent->left;
+        }
+        if (brother == nullptr) return;
+
+        if (brother->color == 'r') {
             parent->color = 'r';
-            brouther->color = 'b';
+            brother->color = 'b';
             RBNodePtr grandpa = parent->parent;
-            if (brouther == parent->right) {
-                // Левый поворот
+            if (brother == parent->right) {
                 if (grandpa) {
                     if (grandpa->left == parent) {
-                        grandpa->left = brouther;
+                        grandpa->left = brother;
                     } else {
-                        grandpa->right = brouther;
+                        grandpa->right = brother;
                     }
                 } else {
-                    this->pFirst = brouther;
+                    this->pFirst = brother;
                 }
-                brouther->parent = grandpa;
-                parent->parent = brouther;
-                RBNodePtr broutherLeft = brouther->left;
-                brouther->left = parent;
-                parent->right = broutherLeft;
-                if (broutherLeft) broutherLeft->parent = parent;
+                brother->parent = grandpa;
+                parent->parent = brother;
+                RBNodePtr brotherLeft = brother->left;
+                brother->left = parent;
+                parent->right = brotherLeft;
+                if (brotherLeft) brotherLeft->parent = parent;
             } else {
-                // Правый поворот
                 if (grandpa) {
                     if (grandpa->left == parent) {
-                        grandpa->left = brouther;
+                        grandpa->left = brother;
                     } else {
-                        grandpa->right = brouther;
+                        grandpa->right = brother;
                     }
                 } else {
-                    this->pFirst = brouther;
+                    this->pFirst = brother;
                 }
-                brouther->parent = grandpa;
-                parent->parent = brouther;
-                RBNodePtr broutherRight = brouther->right;
-                brouther->right = parent;
-                parent->left = broutherRight;
-                if (broutherRight) {
-                    broutherRight->parent = parent;
+                brother->parent = grandpa;
+                parent->parent = brother;
+                RBNodePtr brotherRight = brother->right;
+                brother->right = parent;
+                parent->left = brotherRight;
+                if (brotherRight) {
+                    brotherRight->parent = parent;
                 }
             }
             fixDoubleBlack(node);
             return;
         }
 
-        // 2B: Черный брат, оба племянника черные
-        bool leftNephewBlack = (brouther->left == nullptr || brouther->left->color == 'b');
-        bool rightNephewBlack = (brouther->right == nullptr || brouther->right->color == 'b');
+        bool leftNephewBlack = (brother->left == nullptr || brother->left->color == 'b');
+        bool rightNephewBlack = (brother->right == nullptr || brother->right->color == 'b');
 
         if (leftNephewBlack && rightNephewBlack) {
-            // logger("2B: black brouther black nephews", 1);
-            brouther->color = 'r';
-
+            brother->color = 'r';
             if (parent->color == 'r') {
                 parent->color = 'b';
             } else {
@@ -1459,108 +1368,90 @@ class RedBlackTree : public BaseTree<T, H, RBNode<T, H>> {
             return;
         }
 
-        // 2C/2D: Черный брат с красным племянником
-        if (brouther == parent->right) {
-            // 2D: Ближний племянник красный (левый ребенок брата)
-            if (brouther->left && brouther->left->color == 'r' &&
-                (brouther->right == nullptr || brouther->right->color == 'b')) {
-                // logger("2D: red nephew", 1);
-                RBNodePtr nephew = brouther->left;
-                // Правый поворот
-                brouther->left = nephew->right;
-                if (nephew->right) nephew->right->parent = brouther;
-                nephew->parent = brouther->parent;
-                if (brouther->parent) {
-                    if (brouther->parent->right == brouther) {
-                        brouther->parent->right = nephew;
+        if (brother == parent->right) {
+            if (brother->left && brother->left->color == 'r' &&
+                (brother->right == nullptr || brother->right->color == 'b')) {
+                RBNodePtr nephew = brother->left;
+                brother->left = nephew->right;
+                if (nephew->right) nephew->right->parent = brother;
+                nephew->parent = brother->parent;
+                if (brother->parent) {
+                    if (brother->parent->right == brother) {
+                        brother->parent->right = nephew;
                     } else {
-                        brouther->parent->left = nephew;
+                        brother->parent->left = nephew;
                     }
                 }
-                nephew->right = brouther;
-                brouther->parent = nephew;
-                brouther->color = 'r';
+                nephew->right = brother;
+                brother->parent = nephew;
+                brother->color = 'r';
                 nephew->color = 'b';
-                brouther = nephew;
+                brother = nephew;
             }
-
-            // 2C: Дальний племянник красный (правый ребенок брата)
-            if (brouther->right && brouther->right->color == 'r') {
-                // logger("2C: Far red nephew", 1);
-                //  Левый поворот
-                brouther->color = parent->color;
+            if (brother->right && brother->right->color == 'r') {
+                brother->color = parent->color;
                 parent->color = 'b';
-                brouther->right->color = 'b';
+                brother->right->color = 'b';
                 RBNodePtr grandpa = parent->parent;
                 if (grandpa) {
                     if (grandpa->left == parent) {
-                        grandpa->left = brouther;
+                        grandpa->left = brother;
                     } else {
-                        grandpa->right = brouther;
+                        grandpa->right = brother;
                     }
                 } else {
-                    this->pFirst = brouther;
+                    this->pFirst = brother;
                 }
-                brouther->parent = grandpa;
-                parent->parent = brouther;
-                RBNodePtr broutherLeft = brouther->left;
-                brouther->left = parent;
-                parent->right = broutherLeft;
-                if (broutherLeft) {
-                    broutherLeft->parent = parent;
+                brother->parent = grandpa;
+                parent->parent = brother;
+                RBNodePtr brotherLeft = brother->left;
+                brother->left = parent;
+                parent->right = brotherLeft;
+                if (brotherLeft) {
+                    brotherLeft->parent = parent;
                 }
             }
         } else {
-            // 2D: Ближний племянник красный (правый ребенок брата)
-            if (brouther->right && brouther->right->color == 'r' &&
-                (brouther->left == nullptr || brouther->left->color == 'b')) {
-                // logger("2D: Close red nephew", 1);
-
-                RBNodePtr nephew = brouther->right;
-
-                // Левый поворот
-                brouther->right = nephew->left;
-                if (nephew->left) nephew->left->parent = brouther;
-                nephew->parent = brouther->parent;
-                if (brouther->parent) {
-                    if (brouther->parent->left == brouther) {
-                        brouther->parent->left = nephew;
+            if (brother->right && brother->right->color == 'r' &&
+                (brother->left == nullptr || brother->left->color == 'b')) {
+                RBNodePtr nephew = brother->right;
+                brother->right = nephew->left;
+                if (nephew->left) nephew->left->parent = brother;
+                nephew->parent = brother->parent;
+                if (brother->parent) {
+                    if (brother->parent->left == brother) {
+                        brother->parent->left = nephew;
                     } else {
-                        brouther->parent->right = nephew;
+                        brother->parent->right = nephew;
                     }
                 }
-
-                nephew->left = brouther;
-                brouther->parent = nephew;
-                brouther->color = 'r';
+                nephew->left = brother;
+                brother->parent = nephew;
+                brother->color = 'r';
                 nephew->color = 'b';
-                brouther = nephew;
+                brother = nephew;
             }
-
-            // 2C: Дальний племянник красный (левый ребенок брата)
-            if (brouther->left && brouther->left->color == 'r') {
-                // logger("2C: Far red nephew", 1);
-                //  Правый поворот
-                brouther->color = parent->color;
+            if (brother->left && brother->left->color == 'r') {
+                brother->color = parent->color;
                 parent->color = 'b';
-                brouther->left->color = 'b';
+                brother->left->color = 'b';
                 RBNodePtr grandpa = parent->parent;
                 if (grandpa) {
                     if (grandpa->left == parent) {
-                        grandpa->left = brouther;
+                        grandpa->left = brother;
                     } else {
-                        grandpa->right = brouther;
+                        grandpa->right = brother;
                     }
                 } else {
-                    this->pFirst = brouther;
+                    this->pFirst = brother;
                 }
-                brouther->parent = grandpa;
-                parent->parent = brouther;
-                RBNodePtr broutherRight = brouther->right;
-                brouther->right = parent;
-                parent->left = broutherRight;
-                if (broutherRight) {
-                    broutherRight->parent = parent;
+                brother->parent = grandpa;
+                parent->parent = brother;
+                RBNodePtr brotherRight = brother->right;
+                brother->right = parent;
+                parent->left = brotherRight;
+                if (brotherRight) {
+                    brotherRight->parent = parent;
                 }
             }
         }
