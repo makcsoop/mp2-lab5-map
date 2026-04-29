@@ -132,6 +132,10 @@ dheap: clean
 	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp $(test)/*
 	$(CC) $(CFLAGS) $(samples)/main_D-heap.cpp -Iinclude -o heap
 
+arif: clean
+	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp $(test)/*
+	g++ test/test_arithmetic.cpp  -I./include src/*.cpp -I./gtest gtest/gtest-all.cc -std=c++17 test/test_main.cpp
+
 map_rebuild:
 	rm -f map test_map a.out
 	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp $(test)/*

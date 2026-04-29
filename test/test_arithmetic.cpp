@@ -4,8 +4,11 @@
 
 #include <cmath>
 
+#include "HashTable.h"
 #include "Polinom.h"
 #include "arithmetic.h"
+#include "map.h"
+#include "tree.h"
 
 // Тест конструктора с корректными выражениями
 TEST(ArithmeticTest, ConstructorValidExpression) {
@@ -227,3 +230,45 @@ TEST(ArithmeticTest, PolinomAndDoubleMultiplication) {
         {"a", Polinom("100x1y1z1")}, {"b", Polinom("40")}, {"c", Polinom("4")}, {"d", Polinom("8")}};
     EXPECT_EQ(expr.Calculate(values), Polinom("100x1y1z1+400"));
 }
+
+template <template <class, class> class Table>
+class ArithmeticTestBase : public ::testing::Test {
+   protected:
+    void SetUp() override {
+        values.Insert("a", Polinom("100x1y1z1"));
+        values.Insert("b", Polinom("40"));
+        values.Insert("c", Polinom("4"));
+        values.Insert("d", Polinom("8"));
+    }
+
+    Table<string, Polinom> values;
+    Arithmetic<Polinom, Table<string, Polinom>> expr{"a + b * 10"};
+};
+
+using TableArrSortTest = ArithmeticTestBase<TableArrSort>;
+using MapListsTest = ArithmeticTestBase<MapLists>;
+using TreeTest = ArithmeticTestBase<Tree>;
+using AVLTreeTest = ArithmeticTestBase<AVLTree>;
+using RBTreeTest = ArithmeticTestBase<RedBlackTree>;
+using OpenHashTableTest = ArithmeticTestBase<OpenHashTable>;
+
+TEST_F(TableArrSortTest, BasicCalculation) { EXPECT_EQ(expr.Calculate(values), Polinom("100x1y1z1+400")); }
+
+TEST_F(MapListsTest, BasicCalculation) { EXPECT_EQ(expr.Calculate(values), Polinom("100x1y1z1+400")); }
+
+TEST_F(TreeTest, BasicCalculation) { EXPECT_EQ(expr.Calculate(values), Polinom("100x1y1z1+400")); }
+
+TEST_F(RBTreeTest, BasicCalculation) { EXPECT_EQ(expr.Calculate(values), Polinom("100x1y1z1+400")); }
+
+TEST_F(OpenHashTableTest, BasicCalculation) { EXPECT_EQ(expr.Calculate(values), Polinom("100x1y1z1+400")); }
+
+// TEST(CustomTableArithmeticTest, MapLists) {
+//     Arithmetic<Polinom, MapLists<string, Polinom>> expr("a + b * 10");
+//     MapLists<string, Polinom> values;
+//     values.Insert("a", Polinom("100x1y1z1"));
+//     values.Insert("b", Polinom("40"));
+//     values.Insert("c", Polinom("4"));
+//     values.Insert("d", Polinom("8"));
+
+//     EXPECT_EQ(expr.Calculate(values), Polinom("100x1y1z1+400"));
+// }

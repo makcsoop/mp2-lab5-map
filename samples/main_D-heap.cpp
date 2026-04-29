@@ -8,6 +8,12 @@ int main() {  // изменение ключа + алгоритм дейсктр
     heap.Print();
     // cout << "start extract \n";
     cout << heap.extractMin() << endl;
-    heap.Insert(1000000);
+    // heap.Insert(1000000);
+    heap.Print();
+    cout << "всплытие\n";
+    heap.decreaseKey(5, 3);
+    heap.Print();
+    cout << "погружение\n";
+    heap.decreaseKey(3, 5);
     heap.Print();
 }

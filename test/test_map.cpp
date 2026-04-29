@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <map.h>
 
-// g++ test/*.cpp -I./include  -I./gtest  gtest/*.cc
+// g++ test/test_polinom.cpp  -I./include src/*.cpp -I./gtest gtest/gtest-all.cc -std=c++17 test/test_main.cpp
 template <typename T>
 class TableData : public ::testing::Test {
    protected:

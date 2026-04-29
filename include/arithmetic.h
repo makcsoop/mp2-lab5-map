@@ -33,14 +33,14 @@ class Lexem {
     int GetType();
 };
 
-template <typename T>
+template <typename T, typename MAP = std::map<string, T>>
 class Arithmetic {
     vector<Lexem> lexems;
     vector<Lexem> postfix;
     string infix;
     map<string, int> priority = {{"+", 1}, {"-", 1}, {"*", 2}, {"/", 2}, {"(", 0}, {")", 0}};
     // map<string, double> operands;
-    map<string, T> operands;
+    MAP operands;
 
    public:
     Arithmetic(string _infix);
@@ -56,12 +56,12 @@ class Arithmetic {
     string GetPostfix();
     vector<string> GetOperands();
     // double Calculate(map<string, double> values = {});
-    T Calculate(map<string, T> values = {});
+    T Calculate(MAP values = {});
     void PrintLexems();
 };
 
-template <typename T>
-Arithmetic<T>::Arithmetic(string _infix) : infix(_infix) {
+template <typename T, typename MAP>
+Arithmetic<T, MAP>::Arithmetic(string _infix) : infix(_infix) {
     if (CorrectBrackets()) {
         ToParsingLexem();
         TranslationToPost();
@@ -69,8 +69,8 @@ Arithmetic<T>::Arithmetic(string _infix) : infix(_infix) {
         throw invalid_argument("Error Correct Bracket");
     }
 }
-template <typename T>
-bool Arithmetic<T>::CorrectBrackets() {
+template <typename T, typename MAP>
+bool Arithmetic<T, MAP>::CorrectBrackets() {
     Stake<string> check;
     int flag_operant = 1;
     string oper = "+-/*";
@@ -112,8 +112,8 @@ bool Arithmetic<T>::CorrectBrackets() {
     }
     return true;
 }
-template <typename T>
-void Arithmetic<T>::ToParsingLexem() {
+template <typename T, typename MAP>
+void Arithmetic<T, MAP>::ToParsingLexem() {
     int lenght = infix.size();
     string oper = "+-/*()";
     for (int i = 0; i < lenght; i++) {
@@ -143,8 +143,8 @@ void Arithmetic<T>::ToParsingLexem() {
         }
     }
 }
-template <typename T>
-void Arithmetic<T>::TranslationToPost() {
+template <typename T, typename MAP>
+void Arithmetic<T, MAP>::TranslationToPost() {
     Stake<Lexem> stake;
     string result = "";
     string oper = "+-/*()";
@@ -178,8 +178,8 @@ void Arithmetic<T>::TranslationToPost() {
     }
 }
 
-template <typename T>
-void Arithmetic<T>::InputOperands() {
+template <typename T, typename MAP>
+void Arithmetic<T, MAP>::InputOperands() {
     for (Lexem lexem : lexems) {
         if (isalpha((lexem.GetName()[0]))) {
             if (operands.count(lexem.GetName()) == 0) {
@@ -189,13 +189,13 @@ void Arithmetic<T>::InputOperands() {
         }
     }
 }
-template <typename T>
-string Arithmetic<T>::GetInfix() {
+template <typename T, typename MAP>
+string Arithmetic<T, MAP>::GetInfix() {
     return infix;
 }
 
-template <typename T>
-string Arithmetic<T>::GetPostfix() {
+template <typename T, typename MAP>
+string Arithmetic<T, MAP>::GetPostfix() {
     string res = "";
     for (int i = 0; i < postfix.size(); i++) {
         res += postfix[i].GetName();
@@ -206,8 +206,8 @@ string Arithmetic<T>::GetPostfix() {
     return res;
 }
 
-template <typename T>
-vector<string> Arithmetic<T>::GetOperands() {
+template <typename T, typename MAP>
+vector<string> Arithmetic<T, MAP>::GetOperands() {
     set<string> unique_operands;
     for (auto lexem : lexems) {
         if (isalpha(lexem.GetName()[0])) {
@@ -217,8 +217,8 @@ vector<string> Arithmetic<T>::GetOperands() {
     return vector<string>(unique_operands.begin(), unique_operands.end());
 }
 
-template <typename T>
-T Arithmetic<T>::Calculate(map<string, T> values) {
+template <typename T, typename MAP>
+T Arithmetic<T, MAP>::Calculate(MAP values) {
     if (values.size() == 0) {
         InputOperands();
     } else {
@@ -249,7 +249,7 @@ T Arithmetic<T>::Calculate(map<string, T> values) {
                     break;
             }
         } else if (lexem.GetType() == 1) {
-            cout << operands[lexem.GetName()];
+            // cout << operands[lexem.GetName()];
             stake.push(operands[lexem.GetName()]);
         } else {
             stake.push(ConvertToT(lexem.GetName()));
@@ -258,8 +258,8 @@ T Arithmetic<T>::Calculate(map<string, T> values) {
     return stake.pop();
 }
 
-template <typename T>
-T Arithmetic<T>::ConvertToT(const string &str) {
+template <typename T, typename MAP>
+T Arithmetic<T, MAP>::ConvertToT(const string &str) {
     if constexpr (is_same_v<T, double>) {
         return stod(str);
     } else if constexpr (is_same_v<T, int>) {
@@ -269,8 +269,8 @@ T Arithmetic<T>::ConvertToT(const string &str) {
     }
 }
 
-template <typename T>
-void Arithmetic<T>::PrintLexems() {
+template <typename T, typename MAP>
+void Arithmetic<T, MAP>::PrintLexems() {
     for (auto lexem : lexems) {
         cout << lexem.GetName();
     }

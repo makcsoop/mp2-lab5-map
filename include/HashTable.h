@@ -17,7 +17,7 @@ class OpenHashTable {  // перехеширование и проверка п�
     Pair *data;
     unsigned char *state;
 
-    int size;
+    int sz;
     int countNumber;
 
     int simpleNumbers[25] = {31,      67,      131,     257,      521,      1031,     2053,      4099,
@@ -27,20 +27,32 @@ class OpenHashTable {  // перехеширование и проверка п�
 
    public:
     OpenHashTable() {
-        size = simpleNumbers[0];
+        sz = simpleNumbers[0];
         countNumber = 0;
-        data = new Pair[size];
-        state = new unsigned char[size];
-        for (int i = 0; i < size; i++) state[i] = 0;
+        data = new Pair[sz];
+        state = new unsigned char[sz];
+        for (int i = 0; i < sz; i++) state[i] = 0;
+    }
+
+    int size() { return sz; }
+
+    int count(T key) {
+        int res = 0;
+        for (int i = 0; i < sz; i++) {
+            if (state[i] == 1 && data[i].key == key) {
+                res++;
+            }
+        }
+        return res;
     }
 
     void Insert(T key, H value, bool flag_no_count = false) {
         int i = 0;
         int sum = 0;
-        if ((double)countNumber / (double)size > 0.875) {
+        if ((double)countNumber / (double)sz > 0.875) {
             // logger("Перехеширование", 1);
-            // logger("Заполнненость: " + to_string((double)countNumber / (double)size), 1);
-            // logger("size: " + to_string(size) + " countNumber: " + to_string(countNumber), 1);
+            // logger("Заполнненость: " + to_string((double)countNumber / (double)sz), 1);
+            // logger("sz: " + to_string(sz) + " countNumber: " + to_string(countNumber), 1);
 
             ReHash();
         }
@@ -60,7 +72,7 @@ class OpenHashTable {  // перехеширование и проверка п�
             } else {
                 i++;
             }
-        } while (i != size);
+        } while (i != sz);
         // переполнение таблицы
         // ReHash();
         // Insert(key, value);
@@ -79,7 +91,7 @@ class OpenHashTable {  // перехеширование и проверка п�
                 return &data[index].value;
             }
             i++;
-        } while (i != size);
+        } while (i != sz);
 
         return nullptr;
     }
@@ -99,21 +111,21 @@ class OpenHashTable {  // перехеширование и проверка п�
                 return;
             }
             i++;
-        } while (i != size);
+        } while (i != sz);
         throw invalid_argument("Нет ключа в таблице");
     }
 
     int count() { return countNumber; }
 
-    int hash(int sum, int i) { return (h1(sum) + i * h2(sum)) % size; }
+    int hash(int sum, int i) { return (h1(sum) + i * h2(sum)) % sz; }
 
-    int h1(int k) { return k % size; }
+    int h1(int k) { return k % sz; }
 
-    int h2(int k) { return 1 + k % (size - 1); }
+    int h2(int k) { return 1 + k % (sz - 1); }
 
     void Print() {
         cout << "{\n";
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < sz; i++) {
             if (state[i]) {
                 cout << "\t" << data[i].key << ": " << data[i].value << endl;
             }
@@ -126,17 +138,17 @@ class OpenHashTable {  // перехеширование и проверка п�
         Pair *new_data = new Pair[simpleNumbers[index_number]];
         Pair *all_number = new Pair[countNumber];
         int index = 0;
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < sz; i++) {
             if (state[i] == 1) {
                 all_number[index] = data[i];
                 index++;
             }
         }
-        size = simpleNumbers[index_number];
+        sz = simpleNumbers[index_number];
         delete[] data;
         delete[] state;
-        state = new unsigned char[size];
-        for (int i = 0; i < size; i++) state[i] = 0;
+        state = new unsigned char[sz];
+        for (int i = 0; i < sz; i++) state[i] = 0;
         data = new_data;
         for (int i = 0; i < index; i++) {
             Insert(all_number[i].key, all_number[i].value, true);

@@ -21,10 +21,10 @@ class Map {
     virtual void Insert(T key, H value) = 0;
     virtual void Delete(T key) = 0;
     virtual int count() = 0;
+    virtual int count(T key) = 0;
+    virtual int size() = 0;
     virtual vector<T> keys() = 0;
     virtual H* Find(T key) = 0;
-
-    // void operator=(Map map){};
 };
 
 // УПОРЯДОЧНАЯ ТАБЛИЦА НА МАССИВЕ
@@ -35,6 +35,26 @@ class TableArrSort : public Map<T, H> {
     vector<Pair> data;
 
    public:
+    TableArrSort(std::initializer_list<Pair> other_data) {
+        for (auto x : other_data) {
+            Insert(x.key, x.value);
+        }
+    }
+
+    TableArrSort(TableArrSort<T, H>& m) {
+        for (const auto& [key, value] : m.data) {
+            Insert(key, value);
+        }
+    }
+
+    TableArrSort& operator=(TableArrSort& map) {
+        if (this == &map) {
+            return *this;
+        }
+        data = map.data;
+        return *this;
+    }
+
     H* Find(T key) {
         int l = 0, r = data.size() - 1;
         while (l <= r) {
@@ -60,7 +80,7 @@ class TableArrSort : public Map<T, H> {
                 return data[i].value;
             }
         }
-        data.push_back(Pair(key, H{}));
+        data.push_back(Pair{key, H{}});
         return data[data.size() - 1].value;
     }
     void Print() {
@@ -103,6 +123,17 @@ class TableArrSort : public Map<T, H> {
     }
 
     int count() { return data.size(); }
+    int size() { return data.size(); }
+
+    int count(T key) {
+        int res = 0;
+        for (int i = 0; i < data.size(); i++) {
+            if (data[i].key == key) {
+                res++;
+            }
+        }
+        return res;
+    }
 
     vector<T> keys() {
         vector<T> res;
@@ -132,6 +163,18 @@ class MapLists : public Map<T, H> {
         Pair newPair{key, value};
         list.PushFront(newPair);
     }
+
+    int count(T key) {
+        int res = 0;
+        auto current = list.GetFirst();
+        while (current != nullptr) {
+            if (current->value.key == key) {
+                res++;
+            }
+        }
+        return res;
+    }
+    int size() { return list.size(); }
     H* Find(T key) {
         for (int i = 0; i < list.size(); i++) {
             if (list[i].key == key) {

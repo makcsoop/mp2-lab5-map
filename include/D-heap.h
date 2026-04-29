@@ -41,6 +41,47 @@ class DHeap {
 
     void Insert(T key) { data.push_back(key); }
 
+    int find(T key) {
+        for (int i = 0; i < static_cast<int>(data.size()); i++) {
+            if (data[i] == key) {
+                return i;
+            }
+        }
+        throw invalid_argument("non key");
+    }
+
+    int min_child_index(int index) {
+        int res = index * d + 1;
+        for (int i = index * d + 2; i < min(static_cast<int>(data.size()), index * d + d + 1); i++) {
+            if (data[res] > data[i]) {
+                res = i;
+            }
+        }
+        return res;
+    }
+
+    void decreaseKey(T key, T new_key) {
+        int index = find(key);
+        int index_parent = (index - 1) / d;
+        data[index] = new_key;
+        if (data[index_parent] > new_key) {
+            while (index != 0 && data[index_parent] > new_key) {
+                swap(data[index_parent], data[index]);
+                index = index_parent;
+                index_parent = (index - 1) / d;
+            }
+
+        } else if (data[min_child_index(index)] < new_key) {
+            // cout << index << " " << data[min_child_index(index)] << endl;
+            int index_min = min_child_index(index);
+            while (data[index_min] < new_key) {
+                swap(data[index_min], data[index]);
+                index = index_min;
+                index_min = min_child_index(index);
+            }
+        }
+    }
+
     T extractMin() {
         T res = data[0];
         if (data.size() > 1) {

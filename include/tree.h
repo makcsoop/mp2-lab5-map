@@ -270,6 +270,17 @@ class BaseTree : public Map<T, H> {
 
     BaseNode *GetFirst() { return pFirst; }
 
+    int count(T key) {
+        int res = 0;
+        for (auto x : keys()) {
+            if (x == key) {
+                res++;
+            }
+        }
+        return res;
+    }
+    int size() { return sz; };
+
     void Insert(T key, H value) {
         if (pFirst == nullptr) {
             pFirst = new BaseNode{Pair{key, value}, nullptr, nullptr, nullptr};
@@ -678,6 +689,17 @@ class AVLTree : public BaseTree<T, H, AVLNode<T, H>> {
             Insert(key, H{});
         }
     }
+
+    int count(T key) override {
+        int res = 0;
+        for (auto x : keys()) {
+            if (x == key) {
+                res++;
+            }
+        }
+        return res;
+    }
+    int size() override { return _sz; };
 
     int count() override { return _sz; }
 
