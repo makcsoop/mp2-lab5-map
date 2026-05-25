@@ -10,11 +10,26 @@ class DHeap {
     int d;
 
    public:
-    DHeap() : d(1) {};
+    DHeap() : d(2) {};
 
     DHeap(vector<T> data, int d) {
         this->d = d;
         heapify(data, d);
+    }
+
+    DHeap(DHeap<T>& tmp) {
+        d = tmp.d;
+        data = tmp.data;
+    }
+
+    DHeap(DHeap<T>&& tmp) : data(std::move(tmp.data)), d(tmp.d) { tmp.d = 0; }
+
+    DHeap<T>& operator=(const DHeap<T>& s) {
+        if (this != &s) {
+            this->data = s.data;
+            this->d = s.d;
+        }
+        return *this;
     }
 
     void heapify(vector<T> new_data, int d) {
@@ -28,18 +43,28 @@ class DHeap {
                 int current_index = i;
                 int index_parent = (current_index - 1) / d;
                 while (current_index > 0 && data[current_index] < data[index_parent]) {
-                    T tmp = data[index_parent];
-                    data[index_parent] = data[current_index];
-                    data[current_index] = tmp;
+                    swap(data[current_index], data[index_parent]);
                     current_index = index_parent;
                     index_parent = (current_index - 1) / d;
                 }
             }
         }
-        logger("SUCCESS HEAP GENERAT", 1);
     }
 
-    void Insert(T key) { data.push_back(key); }
+    void Insert(T key) {
+        data.push_back(key);
+        int index = data.size() - 1;
+
+        while (index > 0) {
+            int parent = (index - 1) / d;
+            if (data[index] < data[parent]) {
+                swap(data[index], data[parent]);
+                index = parent;
+            } else {
+                break;
+            }
+        }
+    }
 
     int find(T key) {
         for (int i = 0; i < static_cast<int>(data.size()); i++) {
@@ -51,8 +76,13 @@ class DHeap {
     }
 
     int min_child_index(int index) {
-        int res = index * d + 1;
-        for (int i = index * d + 2; i < min(static_cast<int>(data.size()), index * d + d + 1); i++) {
+        int first_child = index * d + 1;
+        if (first_child >= static_cast<int>(data.size())) {
+            return -1;
+        }
+
+        int res = first_child;
+        for (int i = first_child + 1; i < min(static_cast<int>(data.size()), index * d + d + 1); i++) {
             if (data[res] > data[i]) {
                 res = i;
             }
@@ -60,68 +90,54 @@ class DHeap {
         return res;
     }
 
-    void decreaseKey(T key, T new_key) {
-        int index = find(key);
-        int index_parent = (index - 1) / d;
-        data[index] = new_key;
-        if (data[index_parent] > new_key) {
-            while (index != 0 && data[index_parent] > new_key) {
-                swap(data[index_parent], data[index]);
-                index = index_parent;
-                index_parent = (index - 1) / d;
-            }
+    int size() { return static_cast<int>(data.size()); }
 
-        } else if (data[min_child_index(index)] < new_key) {
-            // cout << index << " " << data[min_child_index(index)] << endl;
-            int index_min = min_child_index(index);
-            while (data[index_min] < new_key) {
-                swap(data[index_min], data[index]);
-                index = index_min;
-                index_min = min_child_index(index);
+    bool IsEmpty() { return static_cast<int>(data.size()) == 0; }
+
+    T getNode(int index) { return data[index]; }
+
+    void decreaseKey(T key, T new_key) {
+        if (new_key > key) {
+            throw invalid_argument("new_key must be less than old key");
+        }
+
+        int index = find(key);
+        data[index] = new_key;
+
+        while (index > 0) {
+            int parent = (index - 1) / d;
+            if (data[parent] > data[index]) {
+                swap(data[parent], data[index]);
+                index = parent;
+            } else {
+                break;
             }
         }
     }
 
     T extractMin() {
-        T res = data[0];
-        if (data.size() > 1) {
-            data[0] = data[data.size() - 1];
-            data.pop_back();
-            T current = data[0];
-            int index = 0;
-            int min_index = (index * d + 1);
-            T min_key = data[index * d + 1];
-            for (int i = (index * d + 2); i < (min(index * d + d + 1, (int)data.size())); i++) {
-                if (data[i] < min_key) {
-                    min_index = i;
-                    min_key = data[min_index];
-                }
-            }
-            data[min_index] = current;
-            data[index] = min_key;
-            while (current < (int)data.size() && current > min_key) {
-                index = min_index;
-                min_index = index * d + 1;
-                if (min_index > (int)data.size() - 1) {
-                    break;
-                }
-                T min_key = data[index * d + 1];
-                for (int i = (index * d + 2); i < (min(index * d + d + 1, (int)data.size())); i++) {
-                    if (data[i] < min_key) {
-                        min_index = i;
-                        min_key = data[min_index];
-                    }
-                }
-                data[min_index] = current;
-                data[index] = min_key;
-            }
-            logger("DELETE SUSSCES", 1);
+        if (static_cast<int>(data.size()) < 1) {
+            throw invalid_argument("Size 0");
         }
-
+        T res = data[0];
+        data[0] = data[0] = data[data.size() - 1];
+        int current_index = 0;
+        int child_index = min_child_index(current_index);
+        data.pop_back();
+        while (data.size() > 0 && child_index != -1 && data[current_index] > data[child_index]) {
+            swap(data[current_index], data[child_index]);
+            current_index = child_index;
+            child_index = min_child_index(current_index);
+        }
         return res;
     }
 
-    T getMin() { return data[0]; }
+    T getMin() {
+        if (static_cast<int>(data.size()) < 1) {
+            throw invalid_argument("Size 0");
+        }
+        return data[0];
+    }
 
     void Print() {
         cout << "[";

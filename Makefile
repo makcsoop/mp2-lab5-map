@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -Wall -Wextra -Werror -std=c++23 
+CFLAGS = -Wall -Wextra  -std=c++23 
 
 BENCH_FLAGS = -Wall -Wextra -std=c++23 -O3 -march=native
 
@@ -132,6 +132,11 @@ dheap: clean
 	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp $(test)/*
 	$(CC) $(CFLAGS) $(samples)/main_D-heap.cpp -Iinclude -o heap
 
+test_dheap:
+	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp
+	g++ test/test_main.cpp test/test_dheap.cpp   -I./include src/*.cpp -I./gtest gtest/gtest-all.cc -std=c++17
+
+
 arif: clean
 	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp $(test)/*
 	g++ test/test_arithmetic.cpp  -I./include src/*.cpp -I./gtest gtest/gtest-all.cc -std=c++17 test/test_main.cpp
@@ -140,6 +145,15 @@ map_rebuild:
 	rm -f map test_map a.out
 	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp $(test)/*
 	$(CC) $(CFLAGS) $(src)/map.cpp $(src)/tree.cpp $(samples)/main_map.cpp -Iinclude -o map
+
+dijkstra: clean
+	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp $(test)/*
+	$(CC) $(CFLAGS) $(samples)/dijkstra.cpp -Iinclude -o dijkstra
+
+test_dijkstra: clean
+	clang-format -i $(src)/*.cpp include/* $(samples)/*.cpp
+	g++ test/test_main.cpp test/test_dijkstra.cpp   -I./include src/*.cpp -I./gtest gtest/gtest-all.cc -std=c++23
+
 
 clean:
 	rm -f map test_map a.out tree hash heap

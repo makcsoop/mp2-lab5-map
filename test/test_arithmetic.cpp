@@ -245,6 +245,8 @@ class ArithmeticTestBase : public ::testing::Test {
     Arithmetic<Polinom, Table<string, Polinom>> expr{"a + b * 10"};
 };
 
+// class TableArrSortTest : public ArithmeticTestBase<TableArrSort> {};
+
 using TableArrSortTest = ArithmeticTestBase<TableArrSort>;
 using MapListsTest = ArithmeticTestBase<MapLists>;
 using TreeTest = ArithmeticTestBase<Tree>;
